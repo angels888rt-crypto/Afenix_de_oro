@@ -1,0 +1,18 @@
+# Servicio local de impresión térmica — Afenix de Oro
+# Instalar con:  pip install -r requirements.txt
+
+# HTTP cliente para comunicarse con el backend FastAPI
+requests==2.31.0
+
+# Biblioteca ESC/POS para impresoras térmicas
+# python-escpos soporta Win32Raw (Windows + USB), Usb (pyusb) y Serial
+python-escpos==3.1
+
+# Necesario para Win32Raw en Windows (comunicación directa con el spooler de impresión)
+pywin32==306
+
+# Opcional: solo necesario si se usa modo USB directo (pyusb) en lugar de Win32Raw
+# pyusb==1.2.1
+
+# Variables de entorno desde archivo .env
+python-dotenv==1.0.0

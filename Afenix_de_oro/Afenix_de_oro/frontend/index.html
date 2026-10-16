@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#7a0c12" />
+  <title>Fénix de Oro · Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/secion.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+</head>
+<body>
+  <header class="app-header" id="header">
+    <div class="container app-header__inner">
+      <a class="logo" href="#panel" data-view="panel">
+        <span class="logo__symbol">凤</span>
+        <span class="logo__text">
+          <span>Fénix de Oro</span>
+          <small id="roleLabel">Panel interno</small>
+        </span>
+      </a>
+      <div class="app-header__actions">
+        <span class="user-chip" id="userChip"></span>
+        <button class="btn btn--ghost btn--small" id="logoutBtn" type="button">Cerrar sesión</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="dashboard-hero" id="panel">
+      <div class="container">
+        <p class="eyebrow">金凤凰 · Sistema interno</p>
+        <h1 id="welcomeTitle">Panel principal</h1>
+        <p id="welcomeText">Gestiona las funciones disponibles para tu rol.</p>
+      </div>
+    </section>
+
+    <section class="section main-menu-section" aria-labelledby="menuTitle">
+      <div class="container">
+        <div class="section__head">
+          <p class="section__eyebrow">Operación</p>
+          <h2 class="section__title" id="menuTitle">Funciones <span class="text-gold">disponibles</span></h2>
+          <p class="section__lead">Accede a cada función desde este panel principal sin salir de la interfaz.</p>
+        </div>
+        <div class="module-grid" id="moduleGrid"></div>
+      </div>
+    </section>
+
+    <section class="section app-section" id="view-orders" hidden>
+      <div class="container">
+        <div class="section__head section__head--left">
+          <p class="section__eyebrow">Mesero</p>
+          <h2 class="section__title">Crear <span class="text-gold">pedido</span></h2>
+          <p class="section__lead">Selecciona mesa, platos y cantidades. El pedido llegará inmediatamente a cocina.</p>
+        </div>
+        <div class="order-layout">
+          <form class="panel-card" id="orderForm">
+            <div class="panel-card__head"><h3>Nuevo pedido</h3></div>
+            <div class="form-grid">
+              <label class="field-block"><span>Mesa</span><select id="orderTable" required></select></label>
+              <label class="field-block"><span>Notas</span><textarea id="orderNotes" rows="3" placeholder="Observaciones para cocina"></textarea></label>
+            </div>
+            <div class="dish-picker" id="dishPicker"></div>
+            <div class="order-summary">
+              <strong>Total: <span id="orderTotal">$0</span></strong>
+              <button class="btn btn--primary" type="submit">Crear pedido</button>
+            </div>
+            <p class="form-message" id="orderMessage" hidden></p>
+          </form>
+          <div class="panel-card">
+            <div class="panel-card__head panel-card__head--between"><h3>Mis pedidos</h3><button class="btn btn--ghost btn--small" id="refreshMyOrders" type="button">Actualizar</button></div>
+            <div class="cards-list" id="myOrdersList"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section app-section" id="view-inventory" hidden>
+      <div class="container">
+        <div class="section__head section__head--left">
+          <p class="section__eyebrow">Administrador</p>
+          <h2 class="section__title">Control de <span class="text-gold">inventario</span></h2>
+          <p class="section__lead">Ajusta las existencias y administra los platos del menú.</p>
+        </div>
+        <div class="toolbar"><button class="btn btn--ghost" id="refreshInventory" type="button">Actualizar inventario</button></div>
+        <div class="inventory-grid" id="inventoryList"></div>
+      </div>
+    </section>
+
+    <section class="section app-section" id="view-users" hidden>
+      <div class="container">
+        <div class="section__head section__head--left">
+          <p class="section__eyebrow">Administrador</p>
+          <h2 class="section__title">Gestión de <span class="text-gold">usuarios</span></h2>
+          <p class="section__lead">Crea credenciales, cambia roles y activa o desactiva cuentas.</p>
+        </div>
+        <div class="user-layout">
+          <form class="panel-card edit-card" id="userForm">
+            <div class="panel-card__head"><h3 id="userFormTitle">Registrar usuario</h3></div>
+            <input type="hidden" id="userId" />
+            <div class="form-grid">
+              <label class="field-block"><span>Nombre completo</span><input id="userFullName" required minlength="3" /></label>
+              <label class="field-block"><span>Usuario</span><input id="userUsername" required minlength="3" /></label>
+              <label class="field-block"><span>Contraseña</span><input id="userPassword" type="password" minlength="8" placeholder="Mínimo 8 caracteres" /></label>
+              <label class="field-block"><span>Rol</span><select id="userRole"><option value="CAMARERO">Mesero</option><option value="ADMIN">Administrador</option></select></label>
+              <label class="field-block"><span>Teléfono</span><input id="userPhone" /></label>
+              <label class="field-block"><span>Estado</span><select id="userActive"><option value="true">Activo</option><option value="false">Inactivo</option></select></label>
+            </div>
+            <div class="order-summary"><div><button class="btn btn--ghost" id="cancelUserEdit" type="button" hidden>Cancelar edición</button></div><button class="btn btn--primary" type="submit" id="saveUserBtn">Registrar usuario</button></div>
+            <p class="form-message" id="userMessage" hidden></p>
+          </form>
+          <div class="panel-card">
+            <div class="panel-card__head panel-card__head--between"><h3>Usuarios registrados</h3><button class="btn btn--ghost btn--small" id="refreshUsers" type="button">Actualizar</button></div>
+            <div class="table-wrap"><table class="data-table"><thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Estado</th><th></th></tr></thead><tbody id="usersTable"></tbody></table></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section app-section" id="view-history" hidden>
+      <div class="container">
+        <div class="section__head section__head--left">
+          <p class="section__eyebrow">Administrador</p>
+          <h2 class="section__title">Historial de <span class="text-gold">órdenes</span></h2>
+          <p class="section__lead">Registro central de todas las órdenes creadas en el sistema.</p>
+        </div>
+        <div class="toolbar"><button class="btn btn--ghost" id="refreshHistory" type="button">Actualizar historial</button></div>
+        <div class="table-wrap"><table class="data-table"><thead><tr><th>Pedido</th><th>Mesa</th><th>Mesero ID</th><th>Estado</th><th>Total</th><th>Creado</th><th>Entregado</th></tr></thead><tbody id="historyTable"></tbody></table></div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <footer class="footer"><div class="container footer__bottom"><p>© <span id="year"></span> Fénix de Oro · Sistema interno.</p></div></footer>
+  <script src="js/main.js"></script>
+</body>
+</html>

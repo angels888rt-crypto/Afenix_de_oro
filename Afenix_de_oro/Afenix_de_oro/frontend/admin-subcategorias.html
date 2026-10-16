@@ -1,0 +1,53 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Subcategorías · Afénix de Oro</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="css/app-shell.css"><link rel="stylesheet" href="css/sidebar.css"><style>
+.sub-grid{display:grid;grid-template-columns:1fr 1.2fr;gap:20px;align-items:start}
+@media(max-width:1000px){.sub-grid{grid-template-columns:1fr}}
+.dish-checks{max-height:180px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:10px;display:grid;gap:6px;background:#fff}
+.dish-checks label{display:flex;align-items:center;gap:8px;font-size:.86rem;cursor:pointer;padding:6px 8px;border-radius:8px;transition:.15s}
+.dish-checks label:hover{background:#fdf6e8}
+.dish-checks input{accent-color:var(--gold)}
+.option-inputs{display:flex;flex-direction:column;gap:8px}
+.option-row{display:flex;gap:8px}
+.option-row input{flex:1}
+.sub-list{display:flex;flex-direction:column;gap:14px}
+.sub-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow);transition:.18s}
+.sub-card:hover{border-color:rgba(199,154,69,.32)}
+.sub-card__head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.sub-card__title{font-family:Cinzel,serif;font-size:1rem;margin:0}
+.sub-card__desc{color:var(--muted);font-size:.82rem;margin:4px 0 0}
+.sub-card__meta{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
+.dish-badge{font-size:.72rem;padding:4px 8px;border-radius:999px;background:#fef4dd;color:#7a5a12;border:1px solid #eadfcf}
+.opt-badge{font-size:.72rem;padding:4px 8px;border-radius:999px;background:#eef6ee;color:#246126;border:1px solid #c8e0c8}
+.opt-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.opt-item{display:inline-flex;align-items:center;gap:6px;background:#f6f1e7;border:1px solid #eadfcf;border-radius:999px;padding:4px 8px;font-size:.78rem}
+.opt-item button{border:none;background:none;cursor:pointer;font-size:.9rem;line-height:1;color:#7a0c12;padding:0 2px}
+.opt-item button:hover{color:#3a0a0a}
+.modal-backdrop{position:fixed;inset:0;z-index:120;background:rgba(20,10,8,.58);backdrop-filter:blur(6px);display:grid;place-items:center;padding:18px}
+.modal-backdrop[hidden]{display:none}
+.modal{width:min(640px,100%);background:var(--paper);border:1px solid var(--gold);border-radius:24px;box-shadow:0 30px 90px rgba(0,0,0,.3);padding:26px;max-height:90vh;overflow:auto}
+.modal__head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:18px}
+.modal__head h2{margin:0;font-family:Cinzel,serif}
+.modal__close{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:#fff;font-size:1.7rem;line-height:1;cursor:pointer}
+.small-muted{font-size:.78rem;color:var(--muted)}
+</style></head><body class="has-sidebar"><header class="app-header"><div class="container app-header__inner"><a class="logo" href="/admin.html"><span class="logo__symbol">凤</span><span class="logo__text"><strong>Afénix de Oro</strong><small>Administrador · Subcategorías</small></span></a><div class="app-header__actions"><span class="user-chip" id="userChip"></span><button class="btn btn--ghost btn--small" id="logoutBtn">Cerrar sesión</button></div></div></header>
+<main><section class="page-hero"><div class="container"><p class="eyebrow">Administrador</p><h1>Gestión de subcategorías</h1><p>Defina opciones obligatorias para platos específicos. Ej: <em>Color del arroz → Amarillo / Café / Blanco</em> aplicado solo a <em>Arroz con pollo</em> y <em>Arroz mixto</em>.</p></div></section>
+<section><div class="container"><div class="sub-grid">
+<div class="panel"><div class="panel__head"><div><h2>Crear subcategoría</h2><p class="muted">Nombre, platos y opciones iniciales</p></div></div>
+<form id="createForm">
+<div class="field"><label for="subName">Nombre *</label><input id="subName" required minlength="2" maxlength="80" placeholder="Ej. Color del arroz"></div>
+<div class="field"><label for="subDesc">Descripción (opcional)</label><input id="subDesc" maxlength="200" placeholder="Ej. El cliente debe elegir el color"></div>
+<div class="field"><label>Platos a los que aplica *</label><div class="dish-checks" id="dishChecks">Cargando platos...</div><small class="small-muted">Puede seleccionar varios platos. Un plato puede tener varias subcategorías.</small></div>
+<div class="field"><label>Opciones iniciales</label><div class="option-inputs" id="optionInputs"><div class="option-row"><input placeholder="Ej. Amarillo" maxlength="80"><button type="button" class="btn btn--ghost btn--small" onclick="this.parentElement.remove()">×</button></div></div><button type="button" class="btn btn--ghost btn--small" id="addOptionBtn" style="margin-top:6px;">+ Agregar opción</button><small class="small-muted">Puede dejar vacío y agregar luego; pero al menos una opción es recomendable.</small></div>
+<p class="form-message" id="createMsg" hidden></p>
+<div style="margin-top:14px;display:flex;gap:10px"><button class="btn btn--primary" type="submit">Crear subcategoría</button><button class="btn btn--ghost" type="button" id="refreshBtn">Actualizar</button></div>
+</form></div>
+<div class="panel"><div class="panel__head"><div><h2>Subcategorías existentes</h2><p class="muted" id="countLabel">0 subcategorías</p></div></div><div id="subsList" class="sub-list"><p class="muted">Cargando...</p></div></div>
+</div></div></section></main>
+<div class="modal-backdrop" id="editModal" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="editTitle"><div class="modal__head"><div><p class="eyebrow">Administrador</p><h2 id="editTitle">Editar subcategoría</h2></div><button class="modal__close" id="closeModal" aria-label="Cerrar">×</button></div>
+<form id="editForm"><input type="hidden" id="editId">
+<div class="field"><label for="editName">Nombre</label><input id="editName" required minlength="2" maxlength="80"></div>
+<div class="field"><label for="editDesc">Descripción</label><input id="editDesc" maxlength="200"></div>
+<div class="field"><label>Platos</label><div class="dish-checks" id="editDishChecks"></div></div>
+<p class="form-message" id="editMsg" hidden></p>
+<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px"><button class="btn btn--ghost" type="button" id="cancelEdit">Cancelar</button><button class="btn btn--primary" type="submit">Guardar cambios</button></div>
+</form></div></div>
+<div class="toast" id="toast"></div><footer class="footer"><div class="container">© <span id="year"></span> Fénix de Oro.</div></footer><script src="js/app-common.js"></script><script src="js/sidebar.js"></script><script src="js/admin-subcategorias.js"></script></body></html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es" class="no-js">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#7a0c12" />
+  <meta name="description" content="Afénix de Oro — Inicio de sesión del sistema web del restaurante. Acceso exclusivo para el personal autorizado." />
+  <title>Afénix de Oro · Inicio de sesión</title>
+
+  <!-- ============================================================
+       TIPOGRAFÍAS (2 familias)
+       - Cinzel: títulos elegantes
+       - Poppins: cuerpo de texto legible
+  ============================================================= -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Estilos: tokens compartidos + estilos del login -->
+  <link rel="stylesheet" href="css/secion.css" />
+  <link rel="stylesheet" href="css/login.css" />
+
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <script>
+    document.documentElement.classList.remove('no-js');
+    document.documentElement.classList.add('js');
+  </script>
+</head>
+
+<body class="login-body">
+  <!-- Fondo decorativo: fénix dorado + patrón oriental (baja opacidad) -->
+  <div class="login-bg" aria-hidden="true">
+    <div class="login-bg__image"></div>
+    <div class="login-bg__pattern"></div>
+    <div class="login-bg__glow"></div>
+  </div>
+
+  <main class="login-main">
+    <!-- ============================================================
+         TARJETA DE ACCESO
+    ============================================================= -->
+    <section class="login-card" aria-labelledby="loginTitle">
+
+      <!-- Marca -->
+      <header class="login-card__head">
+        <span class="login-mark" aria-hidden="true">凤</span>
+        <p class="login-card__eyebrow">金凤凰 · Restaurante chino</p>
+        <h1 class="login-card__title" id="loginTitle">Afénix <span class="text-gold">de Oro</span></h1>
+        <p class="login-card__subtitle">Ingresa tus credenciales para acceder al sistema.</p>
+      </header>
+
+      <!-- Alerta general de error (se muestra por JS) -->
+      <div class="alert" id="formAlert" role="alert" hidden>
+        <svg class="alert__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 3 2.5 20h19L12 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+          <path d="M12 9.5v4.2M12 16.6v.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <span id="formAlertText"></span>
+      </div>
+
+      <!-- ==========================================================
+           FORMULARIO (solo frontend, listo para conectar a la API)
+      =========================================================== -->
+      <form class="login-form" id="loginForm" novalidate autocomplete="on">
+
+        <!-- Campo: Usuario -->
+        <div class="field" id="fieldUser">
+          <label class="field__label" for="usuario">Usuario</label>
+          <div class="field__control">
+            <svg class="field__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.7"/>
+              <path d="M4.8 20c.9-3.6 3.7-5.6 7.2-5.6s6.3 2 7.2 5.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+            </svg>
+            <input
+              class="field__input"
+              type="text"
+              id="usuario"
+              name="usuario"
+              placeholder="Ej. mesero.li"
+              autocomplete="username"
+              spellcheck="false"
+              aria-describedby="errorUser"
+              required
+            />
+          </div>
+          <p class="field__error" id="errorUser" role="alert"></p>
+        </div>
+
+        <!-- Campo: Contraseña -->
+        <div class="field" id="fieldPass">
+          <label class="field__label" for="password">Contraseña</label>
+          <div class="field__control">
+            <svg class="field__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="4.5" y="10.2" width="15" height="9.6" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.7"/>
+              <path d="M8.3 10.2V7.9a3.7 3.7 0 0 1 7.4 0v2.3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+              <circle cx="12" cy="15" r="1.2" fill="currentColor"/>
+            </svg>
+            <input
+              class="field__input"
+              type="password"
+              id="password"
+              name="password"
+              placeholder="••••••••"
+              autocomplete="current-password"
+              aria-describedby="errorPass"
+              required
+            />
+            <!-- Botón mostrar / ocultar contraseña -->
+            <button class="field__toggle" type="button" id="togglePassword" aria-label="Mostrar contraseña" aria-pressed="false">
+              <svg class="icon-eye" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                <circle cx="12" cy="12" r="2.9" fill="none" stroke="currentColor" stroke-width="1.7"/>
+              </svg>
+              <svg class="icon-eye-off" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 4l16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                <path d="M9.9 6.2A9.8 9.8 0 0 1 12 6c6 0 9.5 6 9.5 6a17 17 0 0 1-2.6 3.3M6.6 8A17 17 0 0 0 2.5 12s3.5 6 9.5 6a9.6 9.6 0 0 0 3.3-.55" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                <path d="M9.6 9.9a3 3 0 0 0 4.3 4.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+          <p class="field__error" id="errorPass" role="alert"></p>
+        </div>
+
+        <!-- Botón principal -->
+        <button class="btn-login" type="submit" id="submitBtn">
+          <span class="btn-login__text">Iniciar sesión</span>
+          <svg class="btn-login__arrow" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 12h14M12.5 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="btn-login__spinner" aria-hidden="true"></span>
+        </button>
+
+        <p class="login-form__note">Acceso exclusivo para el personal autorizado del restaurante.</p>
+      </form>
+
+      <footer class="login-card__foot">
+        <span class="login-card__divider" aria-hidden="true"></span>
+        <p>© <span id="year"></span> Fénix de Oro · Sistema interno</p>
+      </footer>
+    </section>
+  </main>
+
+  <script src="js/login.js?v=20250830-2"></script>
+</body>
+</html>

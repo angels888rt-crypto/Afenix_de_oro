@@ -1,0 +1,117 @@
+<!doctype html>
+
+
+<html lang="es">
+
+
+<head>
+
+
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+
+
+<title>Crear plato · Afénix de Oro</title>
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+
+<link rel="stylesheet" href="css/app-shell.css"><link rel="stylesheet" href="css/sidebar.css">
+
+
+</head>
+
+
+<body class="has-sidebar">
+
+
+<header class="app-header"><div class="container app-header__inner">
+
+
+<a class="logo" href="/admin.html"><span class="logo__symbol">凤</span><span class="logo__text"><strong>Afénix de Oro</strong><small>Administrador · Crear plato</small></span></a>
+
+
+<div class="app-header__actions"><span class="user-chip" id="userChip"></span><button class="btn btn--ghost btn--small" id="logoutBtn">Cerrar sesión</button></div>
+
+
+</div></header>
+
+
+<main>
+
+
+<section class="page-hero"><div class="container">
+
+
+<p class="eyebrow">Administrador</p><h1>Crear nuevo plato</h1><p>Registra un producto nuevo del menú. El precio se ingresa en pesos colombianos y el sistema lo guarda correctamente en centavos.</p>
+
+
+
+
+
+</div></section>
+
+
+<section><div class="container form-page-center"><div class="panel panel--wide">
+
+
+<div class="panel__head"><div><h2>Datos del plato</h2><p class="muted">Completa la información y publica el producto.</p></div></div>
+
+
+<form id="dishForm">
+
+
+<div class="form-grid">
+
+
+<div class="field"><label for="name">Nombre</label><input id="name" required minlength="3" maxlength="100" placeholder="Ej. Arroz al wok" /></div>
+
+
+<div class="field"><label for="category">Categoría</label><select id="category" required><option value=""> -- Seleccionar categoria --</option></select><small class="muted" id="categoryHint">Cargando categorias... <a href="/admin-categorias.html" style="color:var(--gold); text-decoration:underline;">Gestionar categorias</a></small></div>
+
+
+<div class="field"><label for="price">Precio (COP)</label><input id="price" required type="number" min="1" step="1" inputmode="numeric" placeholder="25000" /></div>
+
+
+<div class="field"><label for="estimated">Tiempo estimado (minutos)</label><input id="estimated" required type="number" min="1" step="1" inputmode="numeric" placeholder="20" /></div>
+
+
+<div class="field"><label for="disponibilidad">Disponibilidad inicial</label><select id="disponibilidad"><option value="true" selected>🟢 Disponible</option><option value="false">🔴 Agotado</option></select></div>
+
+
+<div class="field field--full"><label for="image">Imagen del plato (opcional)</label><input id="image" type="file" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif" /><small class="muted">PNG/JPG/WEBP/GIF, máx 3MB. Se guarda en la base de datos.</small><div id="imagePreviewWrap" style="margin-top:10px; display:none;"><img id="imagePreview" src="" alt="Vista previa" style="max-width:160px; max-height:120px; object-fit:cover; border-radius:8px; border:1px solid var(--line);"><br><button type="button" class="btn btn--ghost btn--small" id="removeImageBtn" style="margin-top:6px;">Quitar imagen</button></div></div>
+
+
+<div class="field field--full"><label for="description">Descripción</label><textarea id="description" rows="3" placeholder="Descripción visible del plato"></textarea></div>
+
+
+</div>
+
+
+<div class="order-summary"><div><strong id="availabilityPreview">🟢 Disponible</strong><p class="muted">Define si el plato estará disponible para los meseros al crearlo.</p></div><button class="btn btn--primary" type="submit">Crear plato</button></div>
+
+
+<p class="form-message" id="dishMsg" hidden></p>
+
+
+</form>
+
+
+</div></div></section>
+
+
+</main>
+
+
+<div class="toast" id="toast"></div><footer class="footer"><div class="container">© <span id="year"></span> Fénix de Oro.</div></footer>
+
+
+<script src="js/app-common.js"></script><script src="js/sidebar.js"></script><script src="js/admin-crear-plato.js"></script>
+
+
+</body></html>
+
+

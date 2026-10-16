@@ -1,0 +1,7 @@
+# Use this workspace to collaborate
+workspace:
+  id: 8654de2a-f606-4161-885c-3d9148a21493
+
+localResources:
+  collections:
+    - ../Afenix_de_oro/Afenix_de_oro/project/postman/Afenix_Flujo_Pedidos.postman_collection.json
