@@ -22,10 +22,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const yearEl = $('#year');
   if (yearEl) yearEl.textContent = new Date().getFullYear();
 
+  // Define la URL base de tu backend (si usas variable de entorno o la de Render directamente)
+  const API_BASE_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:8000'                  // Para cuando pruebes en local
+    : 'https://afenix-de-oro.onrender.com';      // Tu backend oficial en Render
+
   const API = {
-    DISHES: '/api/v1/dishes',
-    ORDERS: '/api/v1/orders',
-    USERS:  '/api/v1/users',
+    DISHES: `${API_BASE_URL}/api/v1/dishes`,
+    ORDERS: `${API_BASE_URL}/api/v1/orders`,
+    USERS: `${API_BASE_URL}/api/v1/users`,
   };
 
   const authHeaders = (extra = {}) => {
