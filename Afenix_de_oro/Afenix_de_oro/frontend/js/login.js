@@ -165,7 +165,11 @@
       submitBtn.setAttribute('aria-busy', 'true');
 
       try {
-        const response = await fetch('/api/v1/users/login', {
+        // Agrega la URL base de Render arriba o dentro de la función:
+        const API_BASE_URL = 'https://afenix-de-oro.onrender.com';
+
+        // En la línea donde haces el fetch/petición:
+        const response = await fetch(`${API_BASE_URL}/api/v1/login`, { 
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(credentials)
