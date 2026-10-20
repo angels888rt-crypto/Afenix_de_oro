@@ -1,6 +1,7 @@
 """Database session management."""
 from typing import AsyncGenerator
 
+from Afenix_de_oro.Afenix_de_oro.Afenix_de_oro.project.app.domain.entities import User
 from sqlalchemy import inspect, text
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -33,14 +34,14 @@ def column_exists(columns: list[dict], column_name: str) -> bool:
     """Return True if a column with the given name exists in the inspected schema."""
     return any(column.get("name") == column_name for column in columns)
 
+from app.infrastructure.database.models.database_models import UserModel
+
 async def ensure_users_table():
     """Crea la tabla de usuarios si no existe en la base de datos."""
-    # Asegúrate de tener importados 'engine' y tu 'Base' de los modelos
-    from app.infrastructure.database.session import engine, Base
-    from app.infrastructure.database.models import User # o donde tengas tu modelo User
-    
-    # Esto crea la tabla de forma segura si todavía no fue creada
-    Base.metadata.create_all(bind=engine)
+    try:
+        UserModel.__table__.create(bind=engine, checkfirst=True)
+    except Exception as e:
+        print(f"Error creando tabla users: {e}")
 
 async def ensure_dishes_availability_column() -> None:
     """Ensure dishes uses Disponible/Agotado (is_available) and remove stock_quantity if it exists."""
