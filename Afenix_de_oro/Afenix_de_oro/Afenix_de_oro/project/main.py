@@ -68,6 +68,11 @@ async def startup_event() -> None:
     await ensure_order_pagado_status()
     await ensure_order_paid_at_column()
     await ensure_users_table()
+    try:
+        from app.infrastructure.database.models.database_models import UserModel
+        UserModel()
+    except Exception:
+        pass
     # Start daily cleanup at 06:00 America/Bogota (retention 4 days)
     try:
         from app.infrastructure.scheduler.history_cleanup_scheduler import start_history_cleanup_scheduler
