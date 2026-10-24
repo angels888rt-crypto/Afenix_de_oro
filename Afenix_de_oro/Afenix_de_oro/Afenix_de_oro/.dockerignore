@@ -1,0 +1,7 @@
+.git/
+.vscode/
+venv/
+print_service/
+project/.env
+project/**/__pycache__/
+project/**/*.py[cod]
