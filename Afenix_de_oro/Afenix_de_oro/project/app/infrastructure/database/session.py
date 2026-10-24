@@ -12,12 +12,17 @@ from sqlalchemy.exc import OperationalError
 from app.infrastructure.config import settings
 
 # Create async engine
+_engine_connect_args: dict = {}
+if settings.db_ssl_context is not None:
+    _engine_connect_args["ssl"] = settings.db_ssl_context
+
 engine = create_async_engine(
     settings.database_url_async,
     echo=settings.debug,
     pool_size=settings.db_pool_size,
     max_overflow=settings.db_max_overflow,
     pool_pre_ping=True,
+    connect_args=_engine_connect_args,
 )
 
 # Session factory

@@ -43,8 +43,11 @@ def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
     configuration = config.get_section(config.config_ini_section)
     configuration["sqlalchemy.url"] = settings.database_url
+    connect_args = {}
+    if settings.db_ssl_context is not None:
+        connect_args["ssl"] = settings.db_ssl_context
     connectable = engine_from_config(
-        configuration, prefix="sqlalchemy.", poolclass=pool.NullPool
+        configuration, prefix="sqlalchemy.", poolclass=pool.NullPool, connect_args=connect_args
     )
 
     with connectable.connect() as connection:

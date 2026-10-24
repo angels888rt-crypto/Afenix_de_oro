@@ -1,5 +1,11 @@
 """FastAPI main application."""
+import asyncio
+import sys
 from pathlib import Path
+
+# aiomysql + SSL requires the selector event loop on Windows (Proactor fails with WinError 87)
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware

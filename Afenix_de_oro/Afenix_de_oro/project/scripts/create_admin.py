@@ -1,4 +1,12 @@
 import asyncio
+import os
+import sys
+
+# aiomysql + SSL requires the selector event loop on Windows
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.infrastructure.database.session import AsyncSessionLocal
 from app.infrastructure.database.repositories import UserRepository

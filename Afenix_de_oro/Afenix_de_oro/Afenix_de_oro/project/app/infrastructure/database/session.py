@@ -1,7 +1,7 @@
 """Database session management."""
 from typing import AsyncGenerator
 
-from Afenix_de_oro.Afenix_de_oro.Afenix_de_oro.project.app.domain.entities import User
+from app.domain.entities import User
 from sqlalchemy import inspect, text
 from sqlalchemy.ext.asyncio import (
     AsyncSession,

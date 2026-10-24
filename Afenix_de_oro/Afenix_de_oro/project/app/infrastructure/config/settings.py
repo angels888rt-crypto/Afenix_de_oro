@@ -1,5 +1,7 @@
 """Application configuration settings."""
+import ssl
 from functools import lru_cache
+from pathlib import Path
 from typing import Optional
 
 from pydantic_settings import BaseSettings
@@ -22,6 +24,7 @@ class Settings(BaseSettings):
     db_password: str = ""
     db_pool_size: int = 20
     db_max_overflow: int = 10
+    db_ssl_ca: Optional[str] = None
     
     # JWT
     jwt_secret: str = "your-super-secret-key-change-this-in-production"
@@ -56,6 +59,18 @@ class Settings(BaseSettings):
             f"mysql+aiomysql://{self.db_user}:{self.db_password}"
             f"@{self.db_host}:{self.db_port}/{self.db_name}"
         )
+
+    @property
+    def db_ssl_context(self) -> Optional[ssl.SSLContext]:
+        """Build an SSL context from the CA certificate, if configured."""
+        if not self.db_ssl_ca:
+            return None
+        ca_path = Path(self.db_ssl_ca)
+        if not ca_path.is_absolute():
+            # settings.py lives at project/app/infrastructure/config/ -> project root is parents[3]
+            ca_path = Path(__file__).resolve().parents[3] / ca_path
+        context = ssl.create_default_context(cafile=str(ca_path))
+        return context
 
 
 @lru_cache()
