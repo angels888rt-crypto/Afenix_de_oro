@@ -1,88 +1,88 @@
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Mis pedidos · Afénix de Oro</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Poppins:wght@300;400;500;600&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="css/app-shell.css"><link rel="stylesheet" href="css/sidebar.css" />
-  </head>
-
-  <body class="has-sidebar">
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Mis pedidos · Afénix de Oro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Poppins:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/app-shell.css"><link rel="stylesheet" href="css/sidebar.css" />
+  </head>
+
+  <body class="has-sidebar">
         <header class="app-header">
       <div class="container app-header__inner">
         <a class="logo" href="/mesero.html"><span class="logo__symbol">凤</span><span class="logo__text"><strong>Afénix de Oro</strong><small>Mesero · Pedidos</small></span></a>
         <div class="app-header__actions"><span class="user-chip" id="userChip"></span><button class="btn btn--ghost btn--small" id="logoutBtn">Cerrar sesión</button></div>
       </div>
-    </header>
-    <main>
-      <section class="page-hero">
-        <div class="container">
-          <p class="eyebrow">Mesero</p>
-          <h1>Gestionar pedidos existentes</h1>
-          <p>
-            Consulta únicamente los pedidos creados por ti y entrega los que
-            cocina ya marcó como COMPLETADO.
-          </p>
-          
-        </div>
-      </section>
-      <section>
-        <div class="container content-center">
-          <div class="panel panel--wide">
-            <div class="panel__head">
-              <div>
-                <h2>Mis pedidos</h2>
-                <p class="muted">
-                  Solo aparecen órdenes creadas por tu usuario.
-                </p>
-              </div>
-              <button class="btn btn--primary btn--small" id="refreshOrders">
-                Actualizar
-              </button>
-            </div>
-            <div
-              class="toolbar"
-              style="
-                margin: 0 0 16px;
-                gap: 12px;
-                align-items: center;
-                justify-content: flex-start;
-              "
-            >
-              <label
-                for="filterMesa"
-                class="muted"
-                style="font-size: 0.9rem; font-weight: 600"
-                >Filtrar por mesa</label
-              ><select
-                id="filterMesa"
-                class="field__input"
-                style="
-                  max-width: 220px;
-                  padding: 10px 12px;
-                  border-radius: 10px;
-                "
-              >
-                <option value="all">Todas las mesas</option>
-              </select>
-            </div>
-            <div class="cards-list" id="orders"></div>
-          </div>
-        </div>
-      </section>
-    </main>
+    </header>
+    <main>
+      <section class="page-hero">
+        <div class="container">
+          <p class="eyebrow">Mesero</p>
+          <h1>Gestionar pedidos existentes</h1>
+          <p>
+            Consulta únicamente los pedidos creados por ti y entrega los que
+            cocina ya marcó como COMPLETADO.
+          </p>
+          
+        </div>
+      </section>
+      <section>
+        <div class="container content-center">
+          <div class="panel panel--wide">
+            <div class="panel__head">
+              <div>
+                <h2>Mis pedidos</h2>
+                <p class="muted">
+                  Solo aparecen órdenes creadas por tu usuario.
+                </p>
+              </div>
+              <button class="btn btn--primary btn--small" id="refreshOrders">
+                Actualizar
+              </button>
+            </div>
+            <div
+              class="toolbar"
+              style="
+                margin: 0 0 16px;
+                gap: 12px;
+                align-items: center;
+                justify-content: flex-start;
+              "
+            >
+              <label
+                for="filterMesa"
+                class="muted"
+                style="font-size: 0.9rem; font-weight: 600"
+                >Filtrar por mesa</label
+              ><select
+                id="filterMesa"
+                class="field__input"
+                style="
+                  max-width: 220px;
+                  padding: 10px 12px;
+                  border-radius: 10px;
+                "
+              >
+                <option value="all">Todas las mesas</option>
+              </select>
+            </div>
+            <div class="cards-list" id="orders"></div>
+          </div>
+        </div>
+      </section>
+    </main>
     <div class="modal-backdrop" id="editOrderModal" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="editOrderTitle" style="width:min(720px,100%);max-height:90vh;overflow:auto;"><div class="modal__head"><div><p class="eyebrow">Mesero</p><h2 id="editOrderTitle">Editar pedido #<span id="editOrderNum"></span></h2></div><button class="modal__close" id="closeEditModal" aria-label="Cerrar">×</button></div><div id="editOrderContent"><div class="field"><label for="editNotes">Notas para cocina</label><textarea id="editNotes" rows="2" placeholder="Sin picante, extra salsa..."></textarea></div><div style="margin-top:14px;"><label style="font-weight:600;font-size:.88rem;display:block;margin-bottom:8px;">Platos (ajusta cantidades, 0 para quitar)</label><div id="editDishes" class="inventory-grid" style="gap:12px;max-height:340px;overflow:auto;padding:4px;"></div></div></div><div class="modal__actions"><button class="btn btn--ghost" id="cancelEditOrder" type="button">Cancelar</button><button class="btn btn--primary" id="saveEditOrder" type="button">Guardar cambios</button></div><p class="form-message" id="editOrderMsg" hidden></p></div></div>
     <div class="toast" id="toast"></div>
     <footer class="footer">
       <div class="container">© <span id="year"></span> Fénix de Oro.</div>
     </footer>
-    <script src="js/app-common.js"></script><script src="js/sidebar.js"></script>
+    <script src="js/app-common.js?v=20261027-3"></script><script src="js/sidebar.js"></script>
     <script src="js/mesero-pedidos.js"></script>
-  </body>
-</html>
+  </body>
+</html>
