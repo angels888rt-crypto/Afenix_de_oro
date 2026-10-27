@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#7a0c12">
+  <title>Monitor · Cocina · Afénix de Oro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/app-shell.css">
+  <link rel="stylesheet" href="css/sidebar.css">
+  <style>
+    .mesa-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:16px 0 28px}
+    @media(max-width:1100px){.mesa-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media(max-width:780px){.mesa-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:520px){.mesa-grid{grid-template-columns:1fr}}
+    .mesa-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px 16px;box-shadow:var(--shadow);cursor:pointer;transition:.2s;position:relative;overflow:hidden;text-align:center;min-height:130px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px}
+    .mesa-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.85}
+    .mesa-card:hover{transform:translateY(-3px);border-color:rgba(199,154,69,.32);box-shadow:0 14px 30px rgba(0,0,0,.12)}
+    .mesa-card.is-selected{border-color:var(--gold);background:linear-gradient(180deg,#fffdf8,#fff6e0);box-shadow:0 14px 30px rgba(199,154,69,.18)}
+    .mesa-card h3{font-family:Cinzel,serif;font-size:1.25rem;margin:0;color:var(--ink)}
+    .mesa-card .mesa-count{font-size:.82rem;padding:6px 12px;border-radius:999px;font-weight:700;border:1px solid transparent}
+    .mesa-card.has-pending .mesa-count{background:#fff4dd;color:#8a5b00;border-color:#e8d5a0}
+    .mesa-card.no-pending .mesa-count{background:#f2ece6;color:#8f7f75;border-color:#e8ddd1}
+    .mesa-card.has-pending{border-color:rgba(199,154,69,.32)}
+    .mesa-card .mesa-sub{font-size:.78rem;color:var(--muted)}
+    .detail-panel{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:20px;margin-bottom:24px}
+    .detail-panel[hidden]{display:none}
+    .detail-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+    .detail-head h2{font-family:Cinzel,serif;margin:0;font-size:1.2rem}
+    .order-card-monitor{background:#fffdf9;border:1px solid #eadfcf;border-radius:14px;padding:16px;margin-bottom:14px;position:relative}
+    .order-card-monitor__head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+    .order-card-monitor__title{font-family:Cinzel,serif;font-size:1rem;margin:0}
+    .items-list{margin:8px 0}
+    .items-list li{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px dashed #eadfcf;font-size:.88rem}
+    .items-list li:last-child{border-bottom:none}
+    .mesa-badge{font-size:.72rem;font-weight:700;padding:4px 8px;border-radius:999px;background:#f3ece1;color:#7a5a12;border:1px solid #e8d5b0}
+    .empty-detail{padding:28px;text-align:center;color:var(--muted)}
+    .monitor-card__meta{font-size:.84rem;color:var(--muted)}
+    .mesa-card:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+  </style>
+</head>
+<body class="has-sidebar">
+  <header class="app-header">
+    <div class="container app-header__inner">
+      <a class="logo" href="/monitor-ordenes.html">
+        <span class="logo__symbol">凤</span>
+        <span class="logo__text"><strong>Afénix de Oro</strong><small>Monitor · Cocina</small></span>
+      </a>
+      <div class="app-header__actions">
+        <span class="user-chip" id="userChip"></span>
+        <button class="btn btn--ghost btn--small" id="logoutBtn" type="button">Cerrar sesión</button>
+      </div>
+    </div>
+  </header>
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <p class="eyebrow">Monitor</p>
+        <h1>Panel de mesas · Cocina</h1>
+        <p>Selecciona una mesa para ver sus órdenes pendientes del ciclo actual. Al imprimir, la orden pasa a <strong>EN COCINA</strong> y el cambio se guarda en la base de datos.</p>
+        <div class="page-actions">
+          <button class="btn btn--ghost btn--small" id="refreshBtn" type="button">Actualizar</button>
+          <span class="muted" id="lastUpdate" style="font-size:.82rem;align-self:center;"></span>
+        </div>
+      </div>
+    </section>
+    <section>
+      <div class="container">
+        <div class="mesa-grid" id="mesaGrid" aria-label="Mesas con órdenes pendientes"></div>
+        <div class="detail-panel" id="detailPanel" hidden>
+          <div class="detail-head">
+            <div>
+              <h2 id="detailTitle">Selecciona una mesa</h2>
+              <p class="muted" id="detailSub" style="margin:4px 0 0;font-size:.86rem;">Las órdenes pendientes aparecerán aquí</p>
+            </div>
+            <button class="btn btn--ghost btn--small" id="closeDetail" type="button">Cerrar</button>
+          </div>
+          <div id="ordersDetail"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <footer class="footer"><div class="container">© <span id="year"></span> Fénix de Oro.</div></footer>
+  <script src="js/app-common.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script src="js/monitor-ordenes.js"></script>
+</body>
+</html>

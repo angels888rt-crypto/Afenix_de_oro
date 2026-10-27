@@ -3,9 +3,9 @@
   const getRole=()=> (localStorage.getItem('afenix_role')||'').toUpperCase();
   const getToken=()=> localStorage.getItem('afenix_access_token');
   const getDisplay=()=> localStorage.getItem('afenix_display_name')||'Usuario';
-  const allowed=['ADMIN','CAMARERO','CAJERO'];
-  const roleNames={ADMIN:'Administrador',CAMARERO:'Mesero',CAJERO:'Cajero'};
-  const routes={ADMIN:'/admin.html',CAMARERO:'/mesero.html',CAJERO:'/cajero.html'};
+  const allowed=['ADMIN','CAMARERO','CAJERO','MONITOR'];
+  const roleNames={ADMIN:'Administrador',CAMARERO:'Mesero',CAJERO:'Cajero',MONITOR:'Monitor'};
+  const routes={ADMIN:'/admin.html',CAMARERO:'/mesero.html',CAJERO:'/cajero.html',MONITOR:'/monitor-ordenes.html'};
   // Solo exige token existente; la verificación de rol la hace guardPage por página.
   // Esto permite que cualquier usuario autenticado (incluido Auxiliares con roles futuros) pueda iniciar sesión y recargar sin ser expulsado.
   const _initRole=getRole();
