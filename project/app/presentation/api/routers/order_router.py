@@ -134,13 +134,31 @@ async def get_kitchen_orders(
     current_user: dict = Depends(get_current_user),
     order_repository: OrderRepository = Depends(get_order_repository),
 ):
-    """Get orders visible to kitchen (ADMIN only)."""
-    await require_role("ADMIN")(current_user)
+    """Get orders visible to kitchen (ADMIN and MONITOR)."""
+    await require_role("ADMIN", "MONITOR")(current_user)
     use_case = GetKitchenOrdersUseCase(order_repository)
     orders = await use_case.execute(skip, limit)
     return ResponseSchema(
         success=True,
         message="Pedidos de cocina obtenidos exitosamente",
+        data=[_to_response(order) for order in orders],
+    )
+
+
+@router.get("/monitor/pending", response_model=ResponseSchema[list[OrderResponse]])
+async def get_monitor_pending(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100),
+    current_user: dict = Depends(get_current_user),
+    order_repository: OrderRepository = Depends(get_order_repository),
+):
+    """Get pending orders for kitchen monitor (MONITOR and ADMIN)."""
+    await require_role("MONITOR", "ADMIN")(current_user)
+    use_case = GetKitchenOrdersUseCase(order_repository)
+    orders = await use_case.execute(skip, limit)
+    return ResponseSchema(
+        success=True,
+        message="Órdenes pendientes para monitor obtenidas exitosamente",
         data=[_to_response(order) for order in orders],
     )
 

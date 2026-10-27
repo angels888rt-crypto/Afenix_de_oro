@@ -359,8 +359,8 @@ class UpdateOrderStatusUseCase:
 
     async def _check_role_permission(self, order: Order, current_status: str, target_status: str, role: str, updated_by: int):
         if target_status == OrderStatus.EN_COCINA.value:
-            if role not in ("CAJERO", "ADMIN"):
-                raise ConflictException("Solo el cajero puede enviar pedidos a cocina mediante impresión")
+            if role not in ("CAJERO", "ADMIN", "MONITOR"):
+                raise ConflictException("Solo el cajero o el monitor pueden enviar pedidos a cocina mediante impresión")
         elif target_status == OrderStatus.CANCELADO.value:
             if role == "CAMARERO" and order.camarero_id != updated_by:
                 raise ConflictException("El mesero solo puede cancelar pedidos que él creó")
