@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
  // Define la URL base de tu backend (si usas variable de entorno o la de Render directamente)
   const API_BASE_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:8000'                  // Para cuando pruebes en local
-    : 'https://afenix-de-oro.onrender.com';      // Tu backend oficial en Render
+    : 'https://pollo-api.hostless.app';      // Tu backend oficial en Render
 
   const API = {
     DISHES: `${API_BASE_URL}/api/v1/dishes`,
