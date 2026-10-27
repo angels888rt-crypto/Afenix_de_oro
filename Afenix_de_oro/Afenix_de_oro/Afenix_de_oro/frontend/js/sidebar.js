@@ -6,10 +6,11 @@
 
   const role = (localStorage.getItem('afenix_role')||'').toUpperCase();
   const display = localStorage.getItem('afenix_display_name')||'Usuario';
-  if (!role || !['ADMIN','CAMARERO','CAJERO'].includes(role)) return;
+  if (!role || !['ADMIN','CAMARERO','CAJERO','MONITOR'].includes(role)) return;
 
   const isAdmin = role === 'ADMIN';
   const isCajero = role === 'CAJERO';
+  const isMonitor = role === 'MONITOR';
 
   const ADMIN_MENU = [
     { href: '/admin.html', label: 'Panel', icon: 'panel' },
@@ -31,10 +32,15 @@
     { href: '/cajero-entregados.html', label: 'Entregados', icon: 'orders' },
     { href: '/cajero-ventas.html', label: 'Ventas', icon: 'receipt' },
   ];
+  const MONITOR_MENU = [
+    { href: '/monitor.html', label: 'Panel', icon: 'panel' },
+    { href: '/monitor-ordenes.html', label: 'Órdenes', icon: 'orders' },
+  ];
 
   let menu, roleLabel, sectionLabel;
   if (isAdmin) { menu = ADMIN_MENU; roleLabel = 'Administrador'; sectionLabel = 'Administración'; }
   else if (isCajero) { menu = CAJERO_MENU; roleLabel = 'Cajero'; sectionLabel = 'Caja'; }
+  else if (isMonitor) { menu = MONITOR_MENU; roleLabel = 'Monitor'; sectionLabel = 'Cocina'; }
   else { menu = MESERO_MENU; roleLabel = 'Mesero'; sectionLabel = 'Servicio'; }
   const roleShort = roleLabel;
 

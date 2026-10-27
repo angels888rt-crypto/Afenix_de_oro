@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let users = [];
   let editing = null;
   let userToDelete = null;
-  const roleNames = { ADMIN: 'Administrador', CAMARERO: 'Mesero', CAJERO: 'Cajero' };
+  const roleNames = { ADMIN: 'Administrador', CAMARERO: 'Mesero', CAJERO: 'Cajero', MONITOR: 'Monitor de cocina' };
 
   function msg(text, ok = false) {
     const e = $('#msg');

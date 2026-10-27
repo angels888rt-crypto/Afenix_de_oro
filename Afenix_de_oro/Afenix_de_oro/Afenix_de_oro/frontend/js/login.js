@@ -133,7 +133,7 @@
 
   function redirectByRole(role) {
     const resolvedRole = (role || 'CAMARERO').toUpperCase();
-    const routes = { ADMIN: '/admin.html', CAMARERO: '/mesero.html', CAJERO: '/cajero.html' };
+    const routes = { ADMIN: '/admin.html', CAMARERO: '/mesero.html', CAJERO: '/cajero.html', MONITOR: '/monitor-ordenes.html' };
     window.location.href = routes[resolvedRole] || '/panel.html';
   }
 

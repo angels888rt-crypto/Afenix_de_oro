@@ -12,7 +12,7 @@
   const token = localStorage.getItem('afenix_access_token');
   const name = localStorage.getItem('afenix_display_name') || 'Usuario';
 
-  if (!token || !['ADMIN', 'CAMARERO', 'CAJERO'].includes(role)) {
+  if (!token || !['ADMIN', 'CAMARERO', 'CAJERO', 'MONITOR'].includes(role)) {
     window.location.href = '/secion.html';
     return;
   }
@@ -37,13 +37,16 @@
     window.location.href = '/secion.html';
   }
 
-  const roleNames = { ADMIN:'Administrador', CAMARERO:'Mesero', CAJERO:'Cajero' };
+  const roleNames = { ADMIN:'Administrador', CAMARERO:'Mesero', CAJERO:'Cajero', MONITOR:'Monitor' };
   $('#roleLabel').textContent = `Panel · ${roleNames[role] || role}`;
   $('#userChip').textContent = name;
   $('#welcomeTitle').textContent = `Bienvenido, ${name}`;
-  $('#welcomeText').textContent = role === 'CAMARERO'
-    ? 'Crea pedidos y sigue únicamente las órdenes que tú registraste.'
-    : 'Gestiona inventario, usuarios y el historial completo de órdenes.';
+  const welcomeText = {
+    CAMARERO: 'Crea pedidos y sigue únicamente las órdenes que tú registraste.',
+    MONITOR: 'Consulta las órdenes pendientes e imprímelas para enviarlas a cocina.',
+  };
+  $('#welcomeText').textContent = welcomeText[role]
+    || 'Gestiona inventario, usuarios y el historial completo de órdenes.';
   $('#year').textContent = new Date().getFullYear();
   $('#logoutBtn').addEventListener('click', logout);
 
@@ -62,15 +65,22 @@
     CAJERO: [
       { view:'orders', icon:'💰', title:'Caja', text:'Estructura preparada para futuras funciones de caja.' },
     ],
+    MONITOR: [
+      { href:'/monitor-ordenes.html', icon:'🍳', title:'Órdenes de cocina', text:'Visualiza e imprime las órdenes pendientes por mesa.' },
+    ],
   };
 
   const grid = $('#moduleGrid');
-  moduleMap[role].forEach(m => {
-    const b = document.createElement('button');
-    b.className = 'module-btn'; b.type = 'button';
-    b.innerHTML = `<span class="module-btn__icon">${m.icon}</span><h3>${m.title}</h3><p>${m.text}</p>`;
-    b.addEventListener('click', () => showView(m.view));
-    grid.appendChild(b);
+  (moduleMap[role] || []).forEach(module => {
+    const card = document.createElement(module.href ? 'a' : 'button');
+    card.className = 'module-btn';
+    if (module.href) card.href = module.href;
+    else {
+      card.type = 'button';
+      card.addEventListener('click', () => showView(module.view));
+    }
+    card.innerHTML = `<span class="module-btn__icon">${module.icon}</span><h3>${module.title}</h3><p>${module.text}</p>`;
+    grid.appendChild(card);
   });
 
   function showView(view) {
