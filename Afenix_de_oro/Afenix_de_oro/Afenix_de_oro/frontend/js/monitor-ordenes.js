@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const $ = selector => document.querySelector(selector);
   const { api, toast, esc, date } = Afenix;
   const apiOrigin = 'https://pollo-api.hostless.app';
+  const apiUrl = path => new URL(path, apiOrigin).toString();
   const mesaGrid = $('#mesaGrid');
   const detailPanel = $('#detailPanel');
   const ordersDetail = $('#ordersDetail');
@@ -217,7 +218,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
       await new Promise(resolve => window.setTimeout(resolve, 700));
-      await api(`/api/v1/orders/${encodeURIComponent(order.id)}`, {
+      await api(apiUrl(`/api/v1/orders/${encodeURIComponent(order.id)}`), {
         method: 'PUT',
         body: JSON.stringify({ status: 'EN_COCINA' })
       });
@@ -230,7 +231,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   async function loadPending() {
-    const orders = await api('/api/v1/orders/monitor/pending?limit=100') || [];
+    const orders = await api(apiUrl('/api/v1/orders/monitor/pending?limit=100')) || [];
     pendingOrders = orders
       .filter(order => ['PENDIENTE', 'NUEVO'].includes(order.status))
       .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
@@ -240,7 +241,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   async function loadReceiptConfig() {
-    const config = await api('/api/v1/receipt-config');
+    const config = await api(apiUrl('/api/v1/receipt-config'));
     if (!config) return;
     receiptConfig.restaurant_name = config.restaurant_name || 'RESTAURANTE';
     const logoUrl = config.logo_url || config.logo_path;
