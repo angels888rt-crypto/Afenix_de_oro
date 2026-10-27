@@ -6,6 +6,7 @@ class UserRole(str, Enum):
     ADMIN = "ADMIN"
     CAMARERO = "CAMARERO"
     CAJERO = "CAJERO"
+    MONITOR = "MONITOR"
 
 
 class OrderStatus(str, Enum):

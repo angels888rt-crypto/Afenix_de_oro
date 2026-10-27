@@ -21,7 +21,7 @@ class UserRegisterRequest(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     password: str = Field(..., min_length=8)
     full_name: str = Field(..., min_length=3, max_length=100)
-    role: str = Field(default="CAMARERO", pattern="^(ADMIN|CAMARERO|CAJERO)$")
+    role: str = Field(default="CAMARERO", pattern="^(ADMIN|CAMARERO|CAJERO|MONITOR)$")
     phone: Optional[str] = Field(None, max_length=20)
 
 
@@ -29,7 +29,7 @@ class UserLoginRequest(BaseModel):
     """User login request."""
     username: str = Field(...)
     password: str = Field(...)
-    role: Optional[str] = Field(None, pattern="^(ADMIN|CAMARERO|CAJERO)$")
+    role: Optional[str] = Field(None, pattern="^(ADMIN|CAMARERO|CAJERO|MONITOR)$")
 
 
 class UserResponse(BaseModel):
@@ -57,7 +57,7 @@ class AdminUserUpdateRequest(BaseModel):
     email: Optional[str] = Field(None, max_length=100)
     password: Optional[str] = Field(None, min_length=8)
     full_name: Optional[str] = Field(None, min_length=3, max_length=100)
-    role: Optional[str] = Field(None, pattern="^(ADMIN|CAMARERO|CAJERO)$")
+    role: Optional[str] = Field(None, pattern="^(ADMIN|CAMARERO|CAJERO|MONITOR)$")
     is_active: Optional[bool] = None
     phone: Optional[str] = Field(None, max_length=20)
 
