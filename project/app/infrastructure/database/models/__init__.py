@@ -9,6 +9,7 @@ from .database_models import (
     NotificationModel,
     HistoryLogModel,
     ReceiptConfigModel,
+    CategoryModel,
 )
 
 __all__ = [
@@ -22,5 +23,6 @@ __all__ = [
     "NotificationModel",
     "HistoryLogModel",
     "ReceiptConfigModel",
+    "CategoryModel",
 ]
 # Database models module
