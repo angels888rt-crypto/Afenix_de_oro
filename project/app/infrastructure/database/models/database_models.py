@@ -262,3 +262,57 @@ class CategoryModel(BaseModel):
     )
 
 
+class SubcategoryModel(BaseModel):
+    """Subcategory model - additional characteristic for dishes."""
+    __tablename__ = "subcategories"
+
+    name = Column(String(80), nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+
+    __table_args__ = (
+        Index("idx_subcategory_name", "name"),
+    )
+
+
+class SubcategoryOptionModel(BaseModel):
+    """Subcategory option model - available options for a subcategory."""
+    __tablename__ = "subcategory_options"
+
+    subcategory_id = Column(Integer, ForeignKey("subcategories.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = Column(String(80), nullable=False)
+    sort_order = Column(Integer, default=0, nullable=False)
+
+    __table_args__ = (
+        Index("idx_option_subcategory", "subcategory_id"),
+    )
+
+
+class DishSubcategoryModel(BaseModel):
+    """Link between dishes and subcategories - many to many."""
+    __tablename__ = "dish_subcategories"
+
+    dish_id = Column(Integer, ForeignKey("dishes.id", ondelete="CASCADE"), nullable=False, index=True)
+    subcategory_id = Column(Integer, ForeignKey("subcategories.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    __table_args__ = (
+        Index("idx_dish_subcategory_dish", "dish_id"),
+        Index("idx_dish_subcategory_subcategory", "subcategory_id"),
+    )
+
+
+class OrderItemSubcategorySelectionModel(BaseModel):
+    """Selection made by waiter for a subcategory option within an order item."""
+    __tablename__ = "order_item_subcategory_selections"
+
+    order_item_id = Column(Integer, ForeignKey("order_items.id", ondelete="CASCADE"), nullable=False, index=True)
+    subcategory_id = Column(Integer, ForeignKey("subcategories.id", ondelete="CASCADE"), nullable=False, index=True)
+    option_id = Column(Integer, ForeignKey("subcategory_options.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    __table_args__ = (
+        Index("idx_selection_order_item", "order_item_id"),
+        Index("idx_selection_subcategory", "subcategory_id"),
+        Index("idx_selection_option", "option_id"),
+    )
+
+

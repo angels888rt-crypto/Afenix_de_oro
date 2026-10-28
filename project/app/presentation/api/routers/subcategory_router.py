@@ -1,123 +1,262 @@
 """Subcategory API routers."""
-from fastapi import APIRouter, Depends, status, Query
-from app.infrastructure.database.repositories import SubcategoryRepository
-from app.application.use_cases.subcategory_use_cases import (
-    CreateSubcategoryUseCase, ListSubcategoriesUseCase, GetSubcategoryUseCase, UpdateSubcategoryUseCase, DeleteSubcategoryUseCase,
-    CreateOptionUseCase, UpdateOptionUseCase, DeleteOptionUseCase, ListOptionsUseCase
+from fastapi import APIRouter, Depends, status, Query, HTTPException
+from app.infrastructure.database.repositories import (
+    SubcategoryRepository, SubcategoryOptionRepository,
+    DishSubcategoryRepository, DishRepository,
+    get_subcategory_repository, get_subcategory_option_repository,
+    get_dish_subcategory_repository, get_dish_repository
 )
-from app.application.dto import SubcategoryCreateRequest, SubcategoryUpdateRequest, SubcategoryResponse, SubcategoryOptionResponse, SubcategoryOptionCreateRequest, SubcategoryOptionUpdateRequest
+from app.application.use_cases.subcategory_use_cases import (
+    CreateSubcategoryUseCase, GetSubcategoryUseCase, ListSubcategoriesUseCase,
+    UpdateSubcategoryUseCase, DeleteSubcategoryUseCase,
+    CreateSubcategoryOptionUseCase, GetSubcategoryOptionsUseCase,
+    UpdateSubcategoryOptionUseCase, DeleteSubcategoryOptionUseCase,
+    LinkDishesToSubcategoryUseCase, GetSubcategoriesForDishUseCase,
+    GetDishesForSubcategoryUseCase
+)
+from app.application.dto import (
+    SubcategoryCreateRequest, SubcategoryUpdateRequest, SubcategoryResponse,
+    SubcategoryOptionCreateRequest, SubcategoryOptionUpdateRequest,
+    SubcategoryOptionResponse, DishSubcategoryLinkRequest
+)
 from app.shared.responses import ResponseSchema
-from app.presentation.api.dependencies.auth_dependencies import get_subcategory_repository, get_current_user, require_role
+from app.presentation.api.dependencies.auth_dependencies import (
+    get_current_user, require_role, get_subcategory_repository,
+    get_subcategory_option_repository, get_dish_subcategory_repository,
+    get_dish_repository
+)
+from app.infrastructure.database.repositories import HistoryRepository
+from app.presentation.api.dependencies.auth_dependencies import get_history_repository
 
 router = APIRouter(prefix="/api/v1/subcategories", tags=["Subcategories"])
 
-def _to_option_response(opt) -> SubcategoryOptionResponse:
-    return SubcategoryOptionResponse(id=opt.id, subcategory_id=opt.subcategory_id, name=opt.name, created_at=opt.created_at, updated_at=opt.updated_at)
 
 def _to_response(sub) -> SubcategoryResponse:
-    opts = [_to_option_response(o) for o in (sub.options or [])]
-    dishes = [{"id": did, "name": ""} for did in (sub.dish_ids or [])]  # names filled via frontend if needed, but we can leave empty.
-    # To enrich dish names, we could fetch but keep simple; frontend will fetch dish list.
-    # Instead we provide dish_ids; dishes names will be resolved via separate dish fetch.
-    # For richer response, we could fetch dish names via repository but keep ids for now.
-    return SubcategoryResponse(id=sub.id, name=sub.name, description=sub.description, options=opts, dish_ids=sub.dish_ids or [], dishes=dishes, created_at=sub.created_at, updated_at=sub.updated_at)
+    return SubcategoryResponse(
+        id=sub.id, name=sub.name, description=sub.description,
+        is_active=sub.is_active, created_at=sub.created_at, updated_at=sub.updated_at
+    )
 
-# helper to enrich dishes names
-async def _enrich_with_dish_names(subs, sub_repo):
-    # subs is list of Subcategory domain with dish_ids; we want to populate dishes names
-    # fetch dish names via session query
-    from sqlalchemy import select
-    from app.infrastructure.database.models import DishModel
-    enriched=[]
-    for sub in subs:
-        resp = _to_response(sub)
-        if sub.dish_ids:
-            try:
-                result = await sub_repo.session.execute(select(DishModel.id, DishModel.name).where(DishModel.id.in_(sub.dish_ids), DishModel.deleted_at.is_(None)))
-                rows = result.all()
-                resp.dishes = [{"id": r[0], "name": r[1]} for r in rows]
-            except Exception:
-                resp.dishes = [{"id": did, "name": f"Plato #{did}"} for did in sub.dish_ids]
-        enriched.append(resp)
-    return enriched
+
+def _to_option_response(opt) -> SubcategoryOptionResponse:
+    return SubcategoryOptionResponse(
+        id=opt.id, subcategory_id=opt.subcategory_id, name=opt.name,
+        sort_order=opt.sort_order, created_at=opt.created_at, updated_at=opt.updated_at
+    )
+
+
+# ==================== Subcategory CRUD ====================
 
 @router.get("", response_model=ResponseSchema[list[SubcategoryResponse]])
 async def list_subcategories(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     current_user: dict = Depends(get_current_user),
-    sub_repo: SubcategoryRepository = Depends(get_subcategory_repository),
+    subcategory_repo: SubcategoryRepository = Depends(get_subcategory_repository),
 ):
-    use = ListSubcategoriesUseCase(sub_repo)
-    subs = await use.execute(skip, limit)
-    enriched = await _enrich_with_dish_names(subs, sub_repo)
-    return ResponseSchema(success=True, message="Subcategorías obtenidas", data=enriched)
+    """List subcategories - available to any authenticated user."""
+    use_case = ListSubcategoriesUseCase(subcategory_repo)
+    subs = await use_case.execute(skip, limit)
+    return ResponseSchema(success=True, message="Subcategorías obtenidas",
+                          data=[_to_response(s) for s in subs])
 
-@router.get("/{sub_id}", response_model=ResponseSchema[SubcategoryResponse])
-async def get_subcategory(sub_id:int, current_user: dict = Depends(get_current_user), sub_repo: SubcategoryRepository = Depends(get_subcategory_repository)):
-    use = GetSubcategoryUseCase(sub_repo)
-    sub = await use.execute(sub_id)
-    enriched = await _enrich_with_dish_names([sub], sub_repo)
-    return ResponseSchema(success=True, message="Subcategoría obtenida", data=enriched[0])
 
-@router.post("", response_model=ResponseSchema[SubcategoryResponse], status_code=status.HTTP_201_CREATED)
-async def create_subcategory(request: SubcategoryCreateRequest, current_user: dict = Depends(get_current_user), sub_repo: SubcategoryRepository = Depends(get_subcategory_repository)):
+@router.get("/{subcategory_id}", response_model=ResponseSchema[SubcategoryResponse])
+async def get_subcategory(
+    subcategory_id: int,
+    current_user: dict = Depends(get_current_user),
+    subcategory_repo: SubcategoryRepository = Depends(get_subcategory_repository),
+):
+    """Get subcategory by ID."""
+    use_case = GetSubcategoryUseCase(subcategory_repo)
+    sub = await use_case.execute(subcategory_id)
+    return ResponseSchema(success=True, message="Subcategoría obtenida",
+                          data=_to_response(sub))
+
+
+@router.post("", response_model=ResponseSchema[SubcategoryResponse],
+             status_code=status.HTTP_201_CREATED)
+async def create_subcategory(
+    request: SubcategoryCreateRequest,
+    current_user: dict = Depends(get_current_user),
+    subcategory_repo: SubcategoryRepository = Depends(get_subcategory_repository),
+    dish_repo: DishRepository = Depends(get_dish_repository),
+    history_repo: HistoryRepository = Depends(get_history_repository),
+):
+    """Create a new subcategory (admin only)."""
     current_user = await require_role("ADMIN")(current_user)
-    use = CreateSubcategoryUseCase(sub_repo)
-    sub = await use.execute(name=request.name, description=request.description, dish_ids=request.dish_ids, options=request.options, created_by=current_user["user_id"])
-    enriched = await _enrich_with_dish_names([sub], sub_repo)
-    return ResponseSchema(success=True, message="Subcategoría creada", data=enriched[0])
+    use_case = CreateSubcategoryUseCase(subcategory_repo, dish_repo)
+    sub = await use_case.execute(
+        name=request.name, description=request.description,
+        dish_ids=request.dish_ids, created_by=current_user["user_id"]
+    )
+    await _log_history(history_repo, "SUBCATEGORÍAS", "CREADO", "SUBCATEGORÍA",
+                       sub.id, sub.name, f"Subcategoría '{sub.name}' creada",
+                       current_user["user_id"], current_user.get("username"))
+    return ResponseSchema(success=True, message="Subcategoría creada",
+                          data=_to_response(sub))
 
-@router.put("/{sub_id}", response_model=ResponseSchema[SubcategoryResponse])
-async def update_subcategory(sub_id:int, request: SubcategoryUpdateRequest, current_user: dict = Depends(get_current_user), sub_repo: SubcategoryRepository = Depends(get_subcategory_repository)):
+
+@router.put("/{subcategory_id}", response_model=ResponseSchema[SubcategoryResponse])
+async def update_subcategory(
+    subcategory_id: int,
+    request: SubcategoryUpdateRequest,
+    current_user: dict = Depends(get_current_user),
+    subcategory_repo: SubcategoryRepository = Depends(get_subcategory_repository),
+    history_repo: HistoryRepository = Depends(get_history_repository),
+):
+    """Update subcategory (admin only)."""
     current_user = await require_role("ADMIN")(current_user)
-    use = UpdateSubcategoryUseCase(sub_repo)
-    sub = await use.execute(sub_id=sub_id, name=request.name, description=request.description, dish_ids=request.dish_ids, updated_by=current_user["user_id"])
-    enriched = await _enrich_with_dish_names([sub], sub_repo)
-    return ResponseSchema(success=True, message="Subcategoría actualizada", data=enriched[0])
+    use_case = UpdateSubcategoryUseCase(subcategory_repo)
+    sub = await use_case.execute(
+        subcategory_id=subcategory_id, name=request.name,
+        description=request.description, is_active=request.is_active,
+        updated_by=current_user["user_id"]
+    )
+    await _log_history(history_repo, "SUBCATEGORÍAS", "ACTUALIZADO", "SUBCATEGORÍA",
+                       sub.id, sub.name, f"Subcategoría '{sub.name}' actualizada",
+                       current_user["user_id"], current_user.get("username"))
+    return ResponseSchema(success=True, message="Subcategoría actualizada",
+                          data=_to_response(sub))
 
-@router.delete("/{sub_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_subcategory(sub_id:int, current_user: dict = Depends(get_current_user), sub_repo: SubcategoryRepository = Depends(get_subcategory_repository)):
+
+@router.delete("/{subcategory_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_subcategory(
+    subcategory_id: int,
+    current_user: dict = Depends(get_current_user),
+    subcategory_repo: SubcategoryRepository = Depends(get_subcategory_repository),
+    history_repo: HistoryRepository = Depends(get_history_repository),
+):
+    """Delete subcategory (admin only)."""
     current_user = await require_role("ADMIN")(current_user)
-    use = DeleteSubcategoryUseCase(sub_repo)
-    await use.execute(sub_id)
-    return None
+    use_case = DeleteSubcategoryUseCase(subcategory_repo)
+    await use_case.execute(subcategory_id)
+    await _log_history(history_repo, "SUBCATEGORÍAS", "ELIMINADO", "SUBCATEGORÍA",
+                       subcategory_id, None, f"Subcategoría ID {subcategory_id} eliminada",
+                       current_user["user_id"], current_user.get("username"))
 
-# Options
 
-@router.get("/{sub_id}/options", response_model=ResponseSchema[list[SubcategoryOptionResponse]])
-async def list_options(sub_id:int, current_user: dict = Depends(get_current_user), sub_repo: SubcategoryRepository = Depends(get_subcategory_repository)):
-    use = ListOptionsUseCase(sub_repo)
-    opts = await use.execute(sub_id)
-    return ResponseSchema(success=True, message="Opciones obtenidas", data=[_to_option_response(o) for o in opts])
+# ==================== Subcategory Options ====================
 
-@router.post("/{sub_id}/options", response_model=ResponseSchema[SubcategoryOptionResponse], status_code=status.HTTP_201_CREATED)
-async def create_option(sub_id:int, request: SubcategoryOptionCreateRequest, current_user: dict = Depends(get_current_user), sub_repo: SubcategoryRepository = Depends(get_subcategory_repository)):
+@router.get("/{subcategory_id}/options", response_model=ResponseSchema[list[SubcategoryOptionResponse]])
+async def get_subcategory_options(
+    subcategory_id: int,
+    current_user: dict = Depends(get_current_user),
+    option_repo: SubcategoryOptionRepository = Depends(get_subcategory_option_repository),
+):
+    """Get options for a subcategory."""
+    use_case = GetSubcategoryOptionsUseCase(option_repo)
+    opts = await use_case.execute(subcategory_id)
+    return ResponseSchema(success=True, message="Opciones obtenidas",
+                          data=[_to_option_response(o) for o in opts])
+
+
+@router.post("/{subcategory_id}/options", response_model=ResponseSchema[SubcategoryOptionResponse],
+             status_code=status.HTTP_201_CREATED)
+async def create_subcategory_option(
+    subcategory_id: int,
+    request: SubcategoryOptionCreateRequest,
+    current_user: dict = Depends(get_current_user),
+    option_repo: SubcategoryOptionRepository = Depends(get_subcategory_option_repository),
+    subcategory_repo: SubcategoryRepository = Depends(get_subcategory_repository),
+    history_repo: HistoryRepository = Depends(get_history_repository),
+):
+    """Create a new option for a subcategory (admin only)."""
     current_user = await require_role("ADMIN")(current_user)
-    use = CreateOptionUseCase(sub_repo)
-    opt = await use.execute(sub_id=sub_id, name=request.name, created_by=current_user["user_id"])
-    return ResponseSchema(success=True, message="Opción creada", data=_to_option_response(opt))
+    use_case = CreateSubcategoryOptionUseCase(option_repo, subcategory_repo)
+    opt = await use_case.execute(
+        subcategory_id=subcategory_id, name=request.name,
+        sort_order=request.sort_order, created_by=current_user["user_id"]
+    )
+    await _log_history(history_repo, "SUBCATEGORÍAS", "CREADO", "OPCIÓN_SUBCATEGORÍA",
+                       opt.id, opt.name, f"Opción '{opt.name}' creada para subcategoría {subcategory_id}",
+                       current_user["user_id"], current_user.get("username"))
+    return ResponseSchema(success=True, message="Opción creada",
+                          data=_to_option_response(opt))
 
-@router.put("/{sub_id}/options/{option_id}", response_model=ResponseSchema[SubcategoryOptionResponse])
-async def update_option(sub_id:int, option_id:int, request: SubcategoryOptionUpdateRequest, current_user: dict = Depends(get_current_user), sub_repo: SubcategoryRepository = Depends(get_subcategory_repository)):
+
+@router.put("/options/{option_id}", response_model=ResponseSchema[SubcategoryOptionResponse])
+async def update_subcategory_option(
+    option_id: int,
+    request: SubcategoryOptionUpdateRequest,
+    current_user: dict = Depends(get_current_user),
+    option_repo: SubcategoryOptionRepository = Depends(get_subcategory_option_repository),
+    history_repo: HistoryRepository = Depends(get_history_repository),
+):
+    """Update subcategory option (admin only)."""
     current_user = await require_role("ADMIN")(current_user)
-    if not request.name:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=400, detail="Nombre requerido")
-    use = UpdateOptionUseCase(sub_repo)
-    opt = await use.execute(sub_id=sub_id, option_id=option_id, name=request.name, updated_by=current_user["user_id"])
-    return ResponseSchema(success=True, message="Opción actualizada", data=_to_option_response(opt))
+    use_case = UpdateSubcategoryOptionUseCase(option_repo)
+    opt = await use_case.execute(
+        option_id=option_id, name=request.name,
+        sort_order=request.sort_order, updated_by=current_user["user_id"]
+    )
+    await _log_history(history_repo, "SUBCATEGORÍAS", "ACTUALIZADO", "OPCIÓN_SUBCATEGORÍA",
+                       opt.id, opt.name, f"Opción '{opt.name}' actualizada",
+                       current_user["user_id"], current_user.get("username"))
+    return ResponseSchema(success=True, message="Opción actualizada",
+                          data=_to_option_response(opt))
 
-@router.delete("/{sub_id}/options/{option_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_option(sub_id:int, option_id:int, current_user: dict = Depends(get_current_user), sub_repo: SubcategoryRepository = Depends(get_subcategory_repository)):
+
+@router.delete("/options/{option_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_subcategory_option(
+    option_id: int,
+    current_user: dict = Depends(get_current_user),
+    option_repo: SubcategoryOptionRepository = Depends(get_subcategory_option_repository),
+    history_repo: HistoryRepository = Depends(get_history_repository),
+):
+    """Delete subcategory option (admin only)."""
     current_user = await require_role("ADMIN")(current_user)
-    use = DeleteOptionUseCase(sub_repo)
-    await use.execute(sub_id, option_id)
-    return None
+    use_case = DeleteSubcategoryOptionUseCase(option_repo)
+    await use_case.execute(option_id)
+    await _log_history(history_repo, "SUBCATEGORÍAS", "ELIMINADO", "OPCIÓN_SUBCATEGORÍA",
+                       option_id, None, f"Opción ID {option_id} eliminada",
+                       current_user["user_id"], current_user.get("username"))
 
-# Helper endpoint: get subcategories for a dish (for mesero)
-@router.get("/dish/{dish_id}", response_model=ResponseSchema[list[SubcategoryResponse]])
-async def get_subcategories_for_dish(dish_id:int, current_user: dict = Depends(get_current_user), sub_repo: SubcategoryRepository = Depends(get_subcategory_repository)):
-    subs = await sub_repo.get_subcategories_for_dish(dish_id)
-    enriched = await _enrich_with_dish_names(subs, sub_repo)
-    return ResponseSchema(success=True, message="Subcategorías del plato", data=enriched)
+
+# ==================== Dish-Subcategory Links ====================
+
+@router.get("/{subcategory_id}/dishes", response_model=ResponseSchema[list[int]])
+async def get_dishes_for_subcategory(
+    subcategory_id: int,
+    current_user: dict = Depends(get_current_user),
+    dish_sub_repo: DishSubcategoryRepository = Depends(get_dish_subcategory_repository),
+):
+    """Get dish IDs linked to a subcategory."""
+    use_case = GetDishesForSubcategoryUseCase(dish_sub_repo)
+    dish_ids = await use_case.execute(subcategory_id)
+    return ResponseSchema(success=True, message="Platos obtenidos", data=dish_ids)
+
+
+@router.post("/{subcategory_id}/dishes", response_model=ResponseSchema[list[int]])
+async def link_dishes_to_subcategory(
+    subcategory_id: int,
+    request: DishSubcategoryLinkRequest,
+    current_user: dict = Depends(get_current_user),
+    dish_sub_repo: DishSubcategoryRepository = Depends(get_dish_subcategory_repository),
+    dish_repo: DishRepository = Depends(get_dish_repository),
+    subcategory_repo: SubcategoryRepository = Depends(get_subcategory_repository),
+    history_repo: HistoryRepository = Depends(get_history_repository),
+):
+    """Link dishes to a subcategory (admin only)."""
+    current_user = await require_role("ADMIN")(current_user)
+    use_case = LinkDishesToSubcategoryUseCase(dish_sub_repo, dish_repo, subcategory_repo)
+    linked = await use_case.execute(subcategory_id, request.dish_ids)
+    await _log_history(history_repo, "SUBCATEGORÍAS", "ACTUALIZADO", "SUBCATEGORÍA",
+                       subcategory_id, None,
+                       f"{len(linked)} platos vinculados a subcategoría {subcategory_id}",
+                       current_user["user_id"], current_user.get("username"))
+    return ResponseSchema(success=True, message="Platos vinculados", data=linked)
+
+
+async def _log_history(history_repo, category, action, entity_type,
+                       entity_id, entity_name, description,
+                       performed_by, performed_by_username):
+    try:
+        await history_repo.create(
+            category=category, action=action, entity_type=entity_type,
+            entity_id=entity_id, entity_name=entity_name,
+            description=description, performed_by=performed_by,
+            performed_by_username=performed_by_username
+        )
+    except Exception:
+        pass

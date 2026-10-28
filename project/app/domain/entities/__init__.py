@@ -133,6 +133,34 @@ class Category:
 
 
 @dataclass
+class Subcategory:
+    """Subcategory domain entity - additional characteristic for dishes."""
+    id: Optional[int] = None
+    name: str = ""
+    description: Optional[str] = None
+    is_active: bool = True
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    deleted_at: Optional[datetime] = None
+    created_by: Optional[int] = None
+    updated_by: Optional[int] = None
+
+
+@dataclass
+class SubcategoryOption:
+    """Subcategory option domain entity - available options for a subcategory."""
+    id: Optional[int] = None
+    subcategory_id: int = 0
+    name: str = ""
+    sort_order: int = 0
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    deleted_at: Optional[datetime] = None
+    created_by: Optional[int] = None
+    updated_by: Optional[int] = None
+
+
+@dataclass
 class HistoryLog:
     """History log domain entity."""
     id: Optional[int] = None

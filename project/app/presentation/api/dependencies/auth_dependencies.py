@@ -9,7 +9,9 @@ from fastapi import Depends, HTTPException, status
 from app.infrastructure.database.session import get_session
 from app.infrastructure.database.repositories import (
     UserRepository, TableRepository, DishRepository, OrderRepository,
-    OrderItemRepository, NotificationRepository, CategoryRepository
+    OrderItemRepository, NotificationRepository, CategoryRepository,
+    SubcategoryRepository, SubcategoryOptionRepository,
+    DishSubcategoryRepository, OrderItemSubcategorySelectionRepository
 )
 from app.infrastructure.security.jwt_handler import decode_token
 
@@ -47,6 +49,26 @@ def get_notification_repository(session: AsyncSession = Depends(get_session)) ->
 def get_category_repository(session: AsyncSession = Depends(get_session)) -> CategoryRepository:
     """Get category repository."""
     return CategoryRepository(session)
+
+
+def get_subcategory_repository(session: AsyncSession = Depends(get_session)) -> SubcategoryRepository:
+    """Get subcategory repository."""
+    return SubcategoryRepository(session)
+
+
+def get_subcategory_option_repository(session: AsyncSession = Depends(get_session)) -> SubcategoryOptionRepository:
+    """Get subcategory option repository."""
+    return SubcategoryOptionRepository(session)
+
+
+def get_dish_subcategory_repository(session: AsyncSession = Depends(get_session)) -> DishSubcategoryRepository:
+    """Get dish-subcategory repository."""
+    return DishSubcategoryRepository(session)
+
+
+def get_order_item_subcategory_selection_repository(session: AsyncSession = Depends(get_session)) -> OrderItemSubcategorySelectionRepository:
+    """Get order item subcategory selection repository."""
+    return OrderItemSubcategorySelectionRepository(session)
 
 
 

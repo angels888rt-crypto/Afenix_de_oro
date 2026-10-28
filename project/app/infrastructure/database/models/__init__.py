@@ -10,6 +10,10 @@ from .database_models import (
     HistoryLogModel,
     ReceiptConfigModel,
     CategoryModel,
+    SubcategoryModel,
+    SubcategoryOptionModel,
+    DishSubcategoryModel,
+    OrderItemSubcategorySelectionModel,
 )
 
 __all__ = [
@@ -24,5 +28,9 @@ __all__ = [
     "HistoryLogModel",
     "ReceiptConfigModel",
     "CategoryModel",
+    "SubcategoryModel",
+    "SubcategoryOptionModel",
+    "DishSubcategoryModel",
+    "OrderItemSubcategorySelectionModel",
 ]
 # Database models module

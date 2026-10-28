@@ -11,7 +11,7 @@ from app.infrastructure.database.session import ensure_dishes_availability_colum
 from app.presentation.api.middleware.exception_handlers import register_exception_handlers
 from app.presentation.api.routers import (
     user_router, table_router, dish_router, order_router, notification_router,
-    category_router
+    category_router, subcategory_router
 )
 from app.presentation.api.routers import history_router, receipt_router
 
@@ -54,6 +54,7 @@ app.include_router(notification_router.router)
 app.include_router(history_router.router)
 app.include_router(receipt_router.router)
 app.include_router(category_router.router)
+app.include_router(subcategory_router.router)
 
 # Mount legacy static files
 app.mount("/static", StaticFiles(directory=static_dir), name="static")

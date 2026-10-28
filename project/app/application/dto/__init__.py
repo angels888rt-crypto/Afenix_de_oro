@@ -319,3 +319,71 @@ class CategoryResponse(BaseModel):
     description: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+
+
+# ==================== Subcategory DTOs ====================
+
+class SubcategoryCreateRequest(BaseModel):
+    """Subcategory creation request."""
+    name: str = Field(..., min_length=2, max_length=80)
+    description: Optional[str] = Field(None, max_length=200)
+    dish_ids: list[int] = Field(default=[], description="List of dish IDs to apply this subcategory to")
+
+
+class SubcategoryUpdateRequest(BaseModel):
+    """Subcategory update request."""
+    name: Optional[str] = Field(None, min_length=2, max_length=80)
+    description: Optional[str] = Field(None, max_length=200)
+    is_active: Optional[bool] = None
+
+
+class SubcategoryResponse(BaseModel):
+    """Subcategory response."""
+    id: int
+    name: str
+    description: Optional[str] = None
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class SubcategoryOptionCreateRequest(BaseModel):
+    """Subcategory option creation request."""
+    subcategory_id: int = Field(..., gt=0)
+    name: str = Field(..., min_length=1, max_length=80)
+    sort_order: int = Field(default=0, ge=0)
+
+
+class SubcategoryOptionUpdateRequest(BaseModel):
+    """Subcategory option update request."""
+    name: Optional[str] = Field(None, min_length=1, max_length=80)
+    sort_order: Optional[int] = Field(None, ge=0)
+
+
+class SubcategoryOptionResponse(BaseModel):
+    """Subcategory option response."""
+    id: int
+    subcategory_id: int
+    name: str
+    sort_order: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class DishSubcategoryLinkRequest(BaseModel):
+    """Request to link/unlink dishes to a subcategory."""
+    dish_ids: list[int] = Field(..., description="List of dish IDs to link")
+
+
+class OrderItemSubcategorySelectionRequest(BaseModel):
+    """Request for subcategory selection in an order item."""
+    subcategory_id: int = Field(..., gt=0)
+    option_id: int = Field(..., gt=0)
+
+
+class OrderItemWithSubcategories(BaseModel):
+    """Order item with its subcategory selections."""
+    dish_id: int
+    quantity: int
+    special_notes: Optional[str] = None
+    subcategory_selections: list[OrderItemSubcategorySelectionRequest] = Field(default=[])
