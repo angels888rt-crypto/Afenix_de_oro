@@ -547,12 +547,12 @@ class CategoryRepository:
         cats = result.scalars().all()
         return [self._to_domain(cat) for cat in cats]
 
-    async def count_dishes(self, category_id: int) -> int:
-        """Count dishes in a category."""
+    async def count_dishes(self, category_name: str) -> int:
+        """Count dishes in a category by category name."""
         from app.infrastructure.database.models import DishModel
         result = await self.session.execute(
             select(func.count(DishModel.id)).where(
-                DishModel.category_id == category_id,
+                DishModel.category == category_name,
                 DishModel.deleted_at.is_(None)
             )
         )

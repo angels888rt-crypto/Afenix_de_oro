@@ -94,7 +94,7 @@ class DeleteCategoryUseCase:
         cat = await self.category_repository.get_by_id(category_id)
         if not cat:
             raise ValidationException("Categoría no encontrada")
-        count = await self.category_repository.count_dishes(category_id)
+        count = await self.category_repository.count_dishes(cat.name)
         if count > 0:
             raise ValidationException(f"No se puede eliminar la categoría '{cat.name}' porque tiene {count} plato(s) asociado(s). Reasigne o elimine los platos primero.")
         success = await self.category_repository.delete(category_id)
