@@ -462,3 +462,113 @@ class DishRepository:
             created_by=db_dish.created_by,
             updated_by=db_dish.updated_by,
         )
+
+
+class CategoryRepository:
+    """Category repository implementation."""
+
+    def __init__(self, session: AsyncSession):
+        self.session = session
+
+    async def create(self, category: Category) -> Category:
+        """Create a new category."""
+        db_cat = CategoryModel(
+            name=category.name,
+            description=category.description,
+            created_by=category.created_by,
+        )
+        self.session.add(db_cat)
+        await self.session.commit()
+        await self.session.refresh(db_cat)
+        return self._to_domain(db_cat)
+
+    async def get_by_id(self, category_id: int) -> Optional[Category]:
+        """Get category by ID."""
+        result = await self.session.execute(
+            select(CategoryModel).where(
+                CategoryModel.id == category_id,
+                CategoryModel.deleted_at.is_(None)
+            )
+        )
+        cat = result.scalars().first()
+        return self._to_domain(cat) if cat else None
+
+    async def get_by_name(self, name: str) -> Optional[Category]:
+        """Get category by name."""
+        result = await self.session.execute(
+            select(CategoryModel).where(
+                CategoryModel.name.ilike(name),
+                CategoryModel.deleted_at.is_(None)
+            )
+        )
+        cat = result.scalars().first()
+        return self._to_domain(cat) if cat else None
+
+    async def update(self, category_id: int, category: Category) -> Optional[Category]:
+        """Update category."""
+        stmt = select(CategoryModel).where(CategoryModel.id == category_id)
+        result = await self.session.execute(stmt)
+        db_cat = result.scalars().first()
+
+        if not db_cat:
+            return None
+
+        if category.name is not None:
+            db_cat.name = category.name
+        if category.description is not None:
+            db_cat.description = category.description
+        db_cat.updated_at = datetime.now(timezone.utc)
+        db_cat.updated_by = category.updated_by
+
+        await self.session.commit()
+        await self.session.refresh(db_cat)
+        return self._to_domain(db_cat)
+
+    async def delete(self, category_id: int) -> bool:
+        """Soft delete category."""
+        stmt = select(CategoryModel).where(CategoryModel.id == category_id)
+        result = await self.session.execute(stmt)
+        db_cat = result.scalars().first()
+
+        if not db_cat:
+            return False
+
+        db_cat.deleted_at = datetime.now(timezone.utc)
+        await self.session.commit()
+        return True
+
+    async def list(self, skip: int = 0, limit: int = 10) -> list[Category]:
+        """List categories."""
+        result = await self.session.execute(
+            select(CategoryModel).where(
+                CategoryModel.deleted_at.is_(None)
+            ).offset(skip).limit(limit)
+        )
+        cats = result.scalars().all()
+        return [self._to_domain(cat) for cat in cats]
+
+    async def count_dishes(self, category_id: int) -> int:
+        """Count dishes in a category."""
+        from app.infrastructure.database.models import DishModel
+        result = await self.session.execute(
+            select(func.count(DishModel.id)).where(
+                DishModel.category_id == category_id,
+                DishModel.deleted_at.is_(None)
+            )
+        )
+        return result.scalar() or 0
+
+    @staticmethod
+    def _to_domain(db_cat: CategoryModel) -> Category:
+        """Convert database model to domain entity."""
+        return Category(
+            id=db_cat.id,
+            name=db_cat.name,
+            description=db_cat.description,
+            created_at=db_cat.created_at,
+            updated_at=db_cat.updated_at,
+            deleted_at=db_cat.deleted_at,
+            created_by=db_cat.created_by,
+            updated_by=db_cat.updated_by,
+        )
+

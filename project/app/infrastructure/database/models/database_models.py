@@ -248,3 +248,17 @@ class ReceiptConfigModel(Base):
         onupdate=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
+
+
+class CategoryModel(BaseModel):
+    """Category model."""
+    __tablename__ = "categories"
+
+    name = Column(String(80), nullable=False, unique=True, index=True)
+    description = Column(Text, nullable=True)
+
+    __table_args__ = (
+        Index("idx_category_name", "name"),
+    )
+
+

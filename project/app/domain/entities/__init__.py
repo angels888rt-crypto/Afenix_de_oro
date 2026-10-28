@@ -120,6 +120,19 @@ class Notification:
 
 
 @dataclass
+class Category:
+    """Category domain entity."""
+    id: Optional[int] = None
+    name: str = ""
+    description: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    deleted_at: Optional[datetime] = None
+    created_by: Optional[int] = None
+    updated_by: Optional[int] = None
+
+
+@dataclass
 class HistoryLog:
     """History log domain entity."""
     id: Optional[int] = None

@@ -9,7 +9,7 @@ from fastapi import Depends, HTTPException, status
 from app.infrastructure.database.session import get_session
 from app.infrastructure.database.repositories import (
     UserRepository, TableRepository, DishRepository, OrderRepository,
-    OrderItemRepository, NotificationRepository
+    OrderItemRepository, NotificationRepository, CategoryRepository
 )
 from app.infrastructure.security.jwt_handler import decode_token
 
@@ -43,6 +43,11 @@ def get_order_item_repository(session: AsyncSession = Depends(get_session)) -> O
 def get_notification_repository(session: AsyncSession = Depends(get_session)) -> NotificationRepository:
     """Get notification repository."""
     return NotificationRepository(session)
+
+def get_category_repository(session: AsyncSession = Depends(get_session)) -> CategoryRepository:
+    """Get category repository."""
+    return CategoryRepository(session)
+
 
 
 def get_history_repository(session: AsyncSession = Depends(get_session)):
@@ -99,3 +104,4 @@ def require_role(*allowed_roles):
         return current_user
     
     return role_checker
+
