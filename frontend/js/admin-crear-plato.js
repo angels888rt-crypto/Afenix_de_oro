@@ -1,9 +1,20 @@
-document.addEventListener('DOMContentLoaded',()=>{
+document.addEventListener('DOMContentLoaded',async()=>{
   if(!Afenix.guardPage('ADMIN'))return;
-  const $=s=>document.querySelector(s),{api,toast}=Afenix;
+  const $=s=>document.querySelector(s),{api,toast,esc}=Afenix;
   const disponibilidad=$('#disponibilidad'), preview=$('#availabilityPreview'), msg=$('#dishMsg');
+  const categorySelect=$('#category');
   const imageInput=$('#image'), imagePreview=$('#imagePreview'), imageWrap=$('#imagePreviewWrap'), removeBtn=$('#removeImageBtn');
   let pendingFile=null;
+
+  async function loadCategories(){
+    try{
+      const cats=await api('/api/v1/categories?limit=100')||[];
+      if(categorySelect){
+        categorySelect.innerHTML='<option value="">Selecciona una categoría</option>'+cats.map(c=>`<option value="${esc(c.name)}">${esc(c.name)}</option>`).join('');
+      }
+    }catch(e){ console.error('Error cargando categorías:',e); }
+  }
+  await loadCategories();
   const updatePreview=()=>{
     const val = disponibilidad ? disponibilidad.value : 'true';
     if(val==='true'){ preview.textContent='🟢 Disponible — visible para meseros'; }

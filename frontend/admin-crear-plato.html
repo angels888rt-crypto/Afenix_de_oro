@@ -22,7 +22,7 @@
 <form id="dishForm">
 <div class="form-grid">
 <div class="field"><label for="name">Nombre</label><input id="name" required minlength="3" maxlength="100" placeholder="Ej. Arroz al wok" /></div>
-<div class="field"><label for="category">Categoría</label><input id="category" required minlength="3" maxlength="50" placeholder="Ej. Arroces" /></div>
+<div class="field"><label for="category">Categoría</label><select id="category" required><option value="">Selecciona una categoría</option></select><small class="muted">Si no existe la categoría, créala primero en Categorías de platos.</small></div>
 <div class="field"><label for="price">Precio (COP)</label><input id="price" required type="number" min="1" step="1" inputmode="numeric" placeholder="25000" /></div>
 <div class="field"><label for="estimated">Tiempo estimado (minutos)</label><input id="estimated" required type="number" min="1" step="1" inputmode="numeric" placeholder="20" /></div>
 <div class="field"><label for="disponibilidad">Disponibilidad inicial</label><select id="disponibilidad"><option value="true" selected>🟢 Disponible</option><option value="false">🔴 Agotado</option></select></div>

@@ -28,7 +28,6 @@
   ];
   const CAJERO_MENU = [
     { href: '/cajero.html', label: 'Panel', icon: 'panel' },
-    { href: '/cajero-ordenes.html', label: 'Órdenes', icon: 'orders' },
     { href: '/cajero-entregados.html', label: 'Entregados', icon: 'orders' },
     { href: '/cajero-ventas.html', label: 'Ventas', icon: 'receipt' },
   ];
