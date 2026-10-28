@@ -1,9 +1,10 @@
 """Order API routers and role-aware order workflow."""
+from typing import Optional
 from fastapi import APIRouter, Depends, status, Query, HTTPException
 
 from app.infrastructure.database.repositories import (
     OrderRepository, OrderItemRepository, DishRepository, NotificationRepository,
-    TableRepository
+    TableRepository, UserRepository
 )
 from app.application.use_cases.order_use_cases import (
     CreateOrderUseCase, GetOrderUseCase, ListOrdersUseCase, UpdateOrderStatusUseCase,
@@ -19,7 +20,8 @@ from app.application.dto import (
 from app.shared.responses import ResponseSchema
 from app.presentation.api.dependencies.auth_dependencies import (
     get_order_repository, get_order_item_repository, get_dish_repository,
-    get_notification_repository, get_table_repository, get_current_user, require_role, get_history_repository
+    get_notification_repository, get_table_repository, get_user_repository,
+    get_current_user, require_role, get_history_repository
 )
 from app.infrastructure.database.repositories import HistoryRepository
 
@@ -32,12 +34,21 @@ async def _log_history_safe(repo: HistoryRepository, **kwargs):
     except Exception:
         pass
 
-def _to_response(order) -> OrderResponse:
+def _to_response(order, user_repository: Optional[UserRepository] = None) -> OrderResponse:
+    camarero_name = None
+    if order.camarero_id and user_repository:
+        try:
+            user = user_repository.get_by_id(order.camarero_id)
+            if user:
+                camarero_name = getattr(user, 'username', None) or getattr(user, 'full_name', None) or f"Usuario #{order.camarero_id}"
+        except Exception:
+            camarero_name = f"Usuario #{order.camarero_id}"
     return OrderResponse(
         id=order.id,
         table_id=order.table_id,
         table_number=getattr(order, 'table_number', None),
         camarero_id=order.camarero_id,
+        camarero_name=camarero_name,
         status=order.status,
         total_amount=order.total_amount,
         notes=order.notes,
@@ -77,6 +88,7 @@ async def create_order(
     dish_repository: DishRepository = Depends(get_dish_repository),
     table_repository: TableRepository = Depends(get_table_repository),
     notification_repository: NotificationRepository = Depends(get_notification_repository),
+    user_repository: UserRepository = Depends(get_user_repository),
     history_repo: HistoryRepository = Depends(get_history_repository),
 ):
     """Create a new order. Allowed for camareros (and admins)."""
@@ -105,7 +117,7 @@ async def create_order(
         performed_by=current_user["user_id"],
         performed_by_username=current_user.get("username"),
     )
-    return ResponseSchema(success=True, message="Pedido creado exitosamente", data=_to_response(order))
+    return ResponseSchema(success=True, message="Pedido creado exitosamente", data=_to_response(order, user_repository))
 
 
 # Specific collection routes come before /{order_id} to avoid route conflicts.
@@ -115,6 +127,7 @@ async def get_my_orders(
     limit: int = Query(100, ge=1, le=100),
     current_user: dict = Depends(get_current_user),
     order_repository: OrderRepository = Depends(get_order_repository),
+    user_repository: UserRepository = Depends(get_user_repository),
 ):
     """Get only the orders created by the authenticated waiter."""
     await require_role("CAMARERO")(current_user)
@@ -123,7 +136,7 @@ async def get_my_orders(
     return ResponseSchema(
         success=True,
         message="Pedidos del mesero obtenidos exitosamente",
-        data=[_to_response(order) for order in orders],
+        data=[_to_response(order, user_repository) for order in orders],
     )
 
 
@@ -133,6 +146,7 @@ async def get_kitchen_orders(
     limit: int = Query(100, ge=1, le=100),
     current_user: dict = Depends(get_current_user),
     order_repository: OrderRepository = Depends(get_order_repository),
+    user_repository: UserRepository = Depends(get_user_repository),
 ):
     """Get orders visible to kitchen (ADMIN and MONITOR)."""
     await require_role("ADMIN", "MONITOR")(current_user)
@@ -141,7 +155,7 @@ async def get_kitchen_orders(
     return ResponseSchema(
         success=True,
         message="Pedidos de cocina obtenidos exitosamente",
-        data=[_to_response(order) for order in orders],
+        data=[_to_response(order, user_repository) for order in orders],
     )
 
 
@@ -151,6 +165,7 @@ async def get_monitor_pending(
     limit: int = Query(100, ge=1, le=100),
     current_user: dict = Depends(get_current_user),
     order_repository: OrderRepository = Depends(get_order_repository),
+    user_repository: UserRepository = Depends(get_user_repository),
 ):
     """Get pending orders for kitchen monitor (MONITOR and ADMIN)."""
     await require_role("MONITOR", "ADMIN")(current_user)
@@ -159,7 +174,7 @@ async def get_monitor_pending(
     return ResponseSchema(
         success=True,
         message="Órdenes pendientes para monitor obtenidas exitosamente",
-        data=[_to_response(order) for order in orders],
+        data=[_to_response(order, user_repository) for order in orders],
     )
 
 
@@ -169,12 +184,13 @@ async def get_cajero_pending_orders(
     limit: int = Query(100, ge=1, le=100),
     current_user: dict = Depends(get_current_user),
     order_repository: OrderRepository = Depends(get_order_repository),
+    user_repository: UserRepository = Depends(get_user_repository),
 ):
     """Get pending orders for CAJERO - only current cycle (America/Bogota 22:00)."""
     await require_role("CAJERO", "ADMIN")(current_user)
     use_case = GetPendingOrdersForCajeroUseCase(order_repository)
     orders = await use_case.execute(skip, limit)
-    return ResponseSchema(success=True, message="Pedidos pendientes obtenidos exitosamente", data=[_to_response(o) for o in orders])
+    return ResponseSchema(success=True, message="Pedidos pendientes obtenidos exitosamente", data=[_to_response(o, user_repository) for o in orders])
 
 
 @router.get("/cajero/entregados", response_model=ResponseSchema[list[OrderResponse]])
@@ -183,12 +199,13 @@ async def get_cajero_entregados(
     limit: int = Query(100, ge=1, le=100),
     current_user: dict = Depends(get_current_user),
     order_repository: OrderRepository = Depends(get_order_repository),
+    user_repository: UserRepository = Depends(get_user_repository),
 ):
     """Get ENTREGADO orders for CAJERO - pestaña Entregados (solo ciclo actual)."""
     await require_role("CAJERO", "ADMIN")(current_user)
     use_case = GetEntregadosForCajeroUseCase(order_repository)
     orders = await use_case.execute(skip, limit)
-    return ResponseSchema(success=True, message="Pedidos entregados obtenidos exitosamente", data=[_to_response(o) for o in orders])
+    return ResponseSchema(success=True, message="Pedidos entregados obtenidos exitosamente", data=[_to_response(o, user_repository) for o in orders])
 
 
 @router.get("/reports/sales", response_model=ResponseSchema[dict])
@@ -269,6 +286,7 @@ async def get_order_history(
     limit: int = Query(100, ge=1, le=100),
     current_user: dict = Depends(get_current_user),
     order_repository: OrderRepository = Depends(get_order_repository),
+    user_repository: UserRepository = Depends(get_user_repository),
 ):
     """Get the complete order history. Admin only."""
     await require_role("ADMIN")(current_user)
@@ -276,7 +294,7 @@ async def get_order_history(
     return ResponseSchema(
         success=True,
         message="Historial de órdenes obtenido exitosamente",
-        data=[_to_response(order) for order in orders],
+        data=[_to_response(order, user_repository) for order in orders],
     )
 
 
@@ -287,12 +305,13 @@ async def get_orders_by_status(
     limit: int = Query(10, ge=1, le=100),
     current_user: dict = Depends(get_current_user),
     order_repository: OrderRepository = Depends(get_order_repository),
+    user_repository: UserRepository = Depends(get_user_repository),
 ):
     """Get orders by status. Restricted to admin."""
     current_user = await require_role("ADMIN")(current_user)
     use_case = GetOrdersByStatusUseCase(order_repository)
     orders = await use_case.execute(status, skip, limit)
-    return ResponseSchema(success=True, message="Pedidos obtenidos exitosamente", data=[_to_response(o) for o in orders])
+    return ResponseSchema(success=True, message="Pedidos obtenidos exitosamente", data=[_to_response(o, user_repository) for o in orders])
 
 
 @router.get("/table/{table_id}/active", response_model=ResponseSchema[OrderResponse])
@@ -300,6 +319,7 @@ async def get_order_by_table(
     table_id: int,
     current_user: dict = Depends(get_current_user),
     order_repository: OrderRepository = Depends(get_order_repository),
+    user_repository: UserRepository = Depends(get_user_repository),
 ):
     """Get active order for table."""
     await require_role("CAMARERO", "ADMIN")(current_user)
@@ -308,7 +328,7 @@ async def get_order_by_table(
     if not order:
         from app.shared.exceptions import ResourceNotFoundException
         raise ResourceNotFoundException("No hay pedido activo para esta mesa")
-    return ResponseSchema(success=True, message="Pedido obtenido exitosamente", data=_to_response(order))
+    return ResponseSchema(success=True, message="Pedido obtenido exitosamente", data=_to_response(order, user_repository))
 
 
 
@@ -319,12 +339,13 @@ async def list_orders(
     limit: int = Query(100, ge=1, le=100),
     current_user: dict = Depends(get_current_user),
     order_repository: OrderRepository = Depends(get_order_repository),
+    user_repository: UserRepository = Depends(get_user_repository),
 ):
     """List all orders for admin only; use /mine or /kitchen for operational views."""
     await require_role("ADMIN")(current_user)
     use_case = ListOrdersUseCase(order_repository)
     orders = await use_case.execute(skip, limit)
-    return ResponseSchema(success=True, message="Pedidos obtenidos exitosamente", data=[_to_response(o) for o in orders])
+    return ResponseSchema(success=True, message="Pedidos obtenidos exitosamente", data=[_to_response(o, user_repository) for o in orders])
 
 
 @router.put("/{order_id}/edit", response_model=ResponseSchema[OrderResponse])
@@ -334,6 +355,7 @@ async def edit_order(
     current_user: dict = Depends(get_current_user),
     order_repository: OrderRepository = Depends(get_order_repository),
     dish_repository: DishRepository = Depends(get_dish_repository),
+    user_repository: UserRepository = Depends(get_user_repository),
     history_repo: HistoryRepository = Depends(get_history_repository),
 ):
     """Edit pending order - mesero can modify his own PENDIENTE orders."""
@@ -366,7 +388,7 @@ async def edit_order(
         performed_by=current_user["user_id"],
         performed_by_username=current_user.get("username"),
     )
-    return ResponseSchema(success=True, message="Pedido actualizado exitosamente", data=_to_response(order))
+    return ResponseSchema(success=True, message="Pedido actualizado exitosamente", data=_to_response(order, user_repository))
 
 
 @router.put("/items/{item_id}", response_model=ResponseSchema[OrderItemResponse])
@@ -407,6 +429,7 @@ async def update_order_status(
     current_user: dict = Depends(get_current_user),
     order_repository: OrderRepository = Depends(get_order_repository),
     notification_repository: NotificationRepository = Depends(get_notification_repository),
+    user_repository: UserRepository = Depends(get_user_repository),
     history_repo: HistoryRepository = Depends(get_history_repository),
 ):
     """Role-aware order transition: admin completes, waiter delivers."""
@@ -419,7 +442,7 @@ async def update_order_status(
         from app.shared.exceptions import ValidationException
         raise ValidationException("Pedido no encontrado")
 
-    if current_user["role"] not in ("ADMIN", "CAMARERO", "CAJERO"):
+    if current_user["role"] not in ("ADMIN", "CAMARERO", "CAJERO", "MONITOR"):
         raise HTTPException(status_code=403, detail="Rol no autorizado")
 
     prev_status = order.status
@@ -449,7 +472,7 @@ async def update_order_status(
         performed_by=current_user["user_id"],
         performed_by_username=current_user.get("username"),
     )
-    return ResponseSchema(success=True, message="Pedido actualizado exitosamente", data=_to_response(updated))
+    return ResponseSchema(success=True, message="Pedido actualizado exitosamente", data=_to_response(updated, user_repository))
 
 
 @router.post("/cleanup/daily", response_model=ResponseSchema[dict])

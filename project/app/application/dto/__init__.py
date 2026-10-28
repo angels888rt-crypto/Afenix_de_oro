@@ -206,6 +206,7 @@ class OrderResponse(BaseModel):
     table_id: int
     table_number: Optional[int] = None
     camarero_id: Optional[int]
+    camarero_name: Optional[str] = None
     status: str
     total_amount: int
     notes: Optional[str]
