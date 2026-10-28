@@ -10,7 +10,8 @@ from app.infrastructure.config import settings
 from app.infrastructure.database.session import ensure_dishes_availability_column, ensure_history_table, ensure_order_daily_columns, ensure_receipt_config_table, ensure_dish_image_column, ensure_order_pagado_status, ensure_order_paid_at_column
 from app.presentation.api.middleware.exception_handlers import register_exception_handlers
 from app.presentation.api.routers import (
-    user_router, table_router, dish_router, order_router, notification_router
+    user_router, table_router, dish_router, order_router, notification_router,
+    category_router
 )
 from app.presentation.api.routers import history_router, receipt_router
 
@@ -52,6 +53,7 @@ app.include_router(order_router.router)
 app.include_router(notification_router.router)
 app.include_router(history_router.router)
 app.include_router(receipt_router.router)
+app.include_router(category_router.router)
 
 # Mount legacy static files
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
@@ -128,6 +130,11 @@ async def serve_admin_inventory_page():
 @app.get("/admin-crear-plato.html", response_class=FileResponse)
 async def serve_admin_create_dish_page():
     return _frontend_page("admin-crear-plato.html")
+
+
+@app.get("/admin-categorias.html", response_class=FileResponse)
+async def serve_admin_categories_page():
+    return _frontend_page("admin-categorias.html")
 
 
 @app.get("/admin-usuarios.html", response_class=FileResponse)

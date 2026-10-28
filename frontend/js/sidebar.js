@@ -16,6 +16,7 @@
     { href: '/admin.html', label: 'Panel', icon: 'panel' },
     { href: '/admin-inventario.html', label: 'Inventario', icon: 'inventory' },
     { href: '/admin-crear-plato.html', label: 'Crear plato', icon: 'create' },
+    { href: '/admin-categorias.html', label: 'Categorías', icon: 'inventory' },
     { href: '/admin-usuarios.html', label: 'Usuarios', icon: 'users' },
     { href: '/admin-historial.html', label: 'Historial', icon: 'history' },
     { href: '/admin-recibo.html', label: 'Recibo', icon: 'receipt' },

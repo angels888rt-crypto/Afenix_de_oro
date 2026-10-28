@@ -296,3 +296,26 @@ class PaginatedResponse(BaseModel, Generic[T]):
     skip: int
     limit: int
     has_more: bool
+
+
+# ==================== Category DTOs ====================
+
+class CategoryCreateRequest(BaseModel):
+    """Category creation request."""
+    name: str = Field(..., min_length=2, max_length=80)
+    description: Optional[str] = Field(None, max_length=200)
+
+
+class CategoryUpdateRequest(BaseModel):
+    """Category update request."""
+    name: str = Field(..., min_length=2, max_length=80)
+    description: Optional[str] = Field(None, max_length=200)
+
+
+class CategoryResponse(BaseModel):
+    """Category response."""
+    id: int
+    name: str
+    description: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
