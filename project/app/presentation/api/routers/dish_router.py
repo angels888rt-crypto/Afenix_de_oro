@@ -4,7 +4,7 @@ import uuid
 from pathlib import Path
 from fastapi import APIRouter, Depends, status, Query, File, UploadFile, HTTPException
 
-from app.infrastructure.database.repositories import DishRepository
+from app.infrastructure.database.repositories import DishRepository, DishSubcategoryRepository
 from app.application.use_cases.dish_use_cases import (
     CreateDishUseCase, GetDishUseCase, ListDishesUseCase, UpdateDishUseCase,
     DeleteDishUseCase, GetDishesByCategoryUseCase, SearchDishesUseCase,
@@ -13,7 +13,8 @@ from app.application.use_cases.dish_use_cases import (
 from app.application.dto import DishCreateRequest, DishUpdateRequest, DishResponse
 from app.shared.responses import ResponseSchema
 from app.presentation.api.dependencies.auth_dependencies import (
-    get_dish_repository, get_current_user, require_role, get_history_repository
+    get_dish_repository, get_current_user, require_role, get_history_repository,
+    get_dish_subcategory_repository
 )
 from app.infrastructure.database.repositories import HistoryRepository
 
@@ -348,4 +349,43 @@ async def get_available_dishes(
         success=True,
         message="Platos disponibles obtenidos exitosamente",
         data=[_to_dish_response(d) for d in dishes]
+    )
+
+
+@router.get("/{dish_id}/subcategories", response_model=ResponseSchema[list[dict]])
+async def get_dish_subcategories(
+    dish_id: int,
+    current_user: dict = Depends(get_current_user),
+    dish_sub_repo: DishSubcategoryRepository = Depends(get_dish_subcategory_repository),
+    dish_repository: DishRepository = Depends(get_dish_repository),
+):
+    """Get subcategories with options for a dish."""
+    from sqlalchemy import select
+    from app.infrastructure.database.models import SubcategoryOptionModel
+    dish = await dish_repository.get_by_id(dish_id)
+    if not dish:
+        raise HTTPException(status_code=404, detail="Plato no encontrado")
+    subcategories = await dish_sub_repo.get_subcategories_for_dish(dish_id)
+    result = []
+    for s in subcategories:
+        opts = await dish_sub_repo.session.execute(
+            select(SubcategoryOptionModel).where(
+                SubcategoryOptionModel.subcategory_id == s.id,
+                SubcategoryOptionModel.deleted_at.is_(None)
+            ).order_by(SubcategoryOptionModel.sort_order)
+        )
+        options = opts.scalars().all()
+        result.append({
+            "id": s.id,
+            "name": s.name,
+            "description": s.description,
+            "is_active": s.is_active,
+            "options": [
+                {"id": o.id, "name": o.name, "sort_order": o.sort_order} for o in options
+            ]
+        })
+    return ResponseSchema(
+        success=True,
+        message="Subcategorías del plato obtenidas",
+        data=result
     )
