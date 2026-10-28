@@ -176,6 +176,7 @@ class OrderItemResponse(BaseModel):
     completed_at: Optional[datetime]
     created_at: datetime
     updated_at: datetime
+    subcategory_selections: Optional[list[dict]] = None
 
 
 # ==================== Order DTOs ====================

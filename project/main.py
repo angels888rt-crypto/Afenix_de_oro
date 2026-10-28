@@ -133,6 +133,11 @@ async def serve_admin_create_dish_page():
     return _frontend_page("admin-crear-plato.html")
 
 
+@app.get("/admin-subcategorías.html", response_class=FileResponse)
+async def serve_admin_subcategories_page():
+    return _frontend_page("admin-subcategorías.html")
+
+
 @app.get("/admin-categorias.html", response_class=FileResponse)
 async def serve_admin_categories_page():
     return _frontend_page("admin-categorias.html")
