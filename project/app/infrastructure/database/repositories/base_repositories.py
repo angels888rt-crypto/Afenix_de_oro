@@ -7,10 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
 from app.infrastructure.database.models import (
-    UserModel, TableModel, DishModel, OrderModel, OrderItemModel, NotificationModel
+    UserModel, TableModel, DishModel, OrderModel, OrderItemModel, NotificationModel, CategoryModel
 )
 from app.domain.entities import (
-    User, Table, Dish, Order, OrderItem, Notification
+    User, Table, Dish, Order, OrderItem, Notification, Category
 )
 
 
