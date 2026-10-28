@@ -181,6 +181,14 @@ class OrderItemResponse(BaseModel):
 
 # ==================== Order DTOs ====================
 
+class OrderItemWithSubcategories(BaseModel):
+    """Order item with subcategory selections for waiter creation."""
+    dish_id: int
+    quantity: int
+    special_notes: Optional[str] = None
+    subcategory_selections: list[dict] = Field(default=[])
+
+
 class OrderCreateRequest(BaseModel):
     """Order creation request. A waiter may identify a table by its number."""
     table_id: Optional[int] = Field(None, gt=0)
