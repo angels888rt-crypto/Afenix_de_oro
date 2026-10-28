@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, status, Query, HTTPException
 
 from app.infrastructure.database.repositories import (
     OrderRepository, OrderItemRepository, DishRepository, NotificationRepository,
-    TableRepository, UserRepository
+    TableRepository, UserRepository, OrderItemSubcategorySelectionRepository
 )
 from app.application.use_cases.order_use_cases import (
     CreateOrderUseCase, GetOrderUseCase, ListOrdersUseCase, UpdateOrderStatusUseCase,
@@ -21,6 +21,7 @@ from app.shared.responses import ResponseSchema
 from app.presentation.api.dependencies.auth_dependencies import (
     get_order_repository, get_order_item_repository, get_dish_repository,
     get_notification_repository, get_table_repository, get_user_repository,
+    get_order_item_subcategory_selection_repository,
     get_current_user, require_role, get_history_repository
 )
 from app.infrastructure.database.repositories import HistoryRepository
@@ -89,11 +90,12 @@ async def create_order(
     table_repository: TableRepository = Depends(get_table_repository),
     notification_repository: NotificationRepository = Depends(get_notification_repository),
     user_repository: UserRepository = Depends(get_user_repository),
+    selection_repo: OrderItemSubcategorySelectionRepository = Depends(get_order_item_subcategory_selection_repository),
     history_repo: HistoryRepository = Depends(get_history_repository),
 ):
     """Create a new order. Allowed for camareros (and admins)."""
     current_user = await require_role("CAMARERO", "ADMIN")(current_user)
-    use_case = CreateOrderUseCase(order_repository, dish_repository, table_repository, notification_repository)
+    use_case = CreateOrderUseCase(order_repository, dish_repository, table_repository, notification_repository, selection_repository=selection_repo)
     order = await use_case.execute(
         table_id=request.table_id,
         table_number=request.table_number,

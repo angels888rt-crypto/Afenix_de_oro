@@ -3,9 +3,10 @@ from typing import Optional
 from datetime import datetime, timezone, timedelta
 
 from app.infrastructure.database.repositories import (
-    OrderRepository, OrderItemRepository, DishRepository, NotificationRepository, TableRepository
+    OrderRepository, OrderItemRepository, DishRepository, NotificationRepository, TableRepository,
+    OrderItemSubcategorySelectionRepository
 )
-from app.domain.entities import Order, OrderItem, Notification
+from app.domain.entities import Order, OrderItem, Notification, OrderItemSubcategorySelection
 from app.domain.services import OrderService, OrderItemService, NotificationService
 from app.shared.exceptions import ValidationException, ConflictException
 from app.shared.constants.enums import OrderStatus, OrderItemStatus, NotificationEvent
@@ -42,11 +43,12 @@ def _get_cycle_for_timestamp(dt_utc: Optional[datetime] = None) -> tuple[str, da
 class CreateOrderUseCase:
     """Use case for creating an order."""
     
-    def __init__(self, order_repository: OrderRepository, dish_repository: DishRepository, table_repository: TableRepository, notification_repository: NotificationRepository):
+    def __init__(self, order_repository: OrderRepository, dish_repository: DishRepository, table_repository: TableRepository, notification_repository: NotificationRepository, selection_repository: OrderItemSubcategorySelectionRepository = None):
         self.order_repository = order_repository
         self.dish_repository = dish_repository
         self.table_repository = table_repository
         self.notification_repository = notification_repository
+        self.selection_repository = selection_repository
     
     async def execute(self, table_id: Optional[int] = None, table_number: Optional[int] = None, items_data: Optional[list[dict]] = None, notes: Optional[str] = None, camarero_id: Optional[int] = None, created_by: Optional[int] = None) -> Order:
         """Create an order from an existing table or an arbitrary table number."""
@@ -174,6 +176,16 @@ class CreateOrderUseCase:
             ))
 
         created_order = await self.order_repository.create(order)
+        # Guardar selecciones de subcategorías para cada item
+        if self.selection_repository:
+            for item_data, order_item in zip(items_data or [], created_order.items):
+                selections = item_data.get("subcategory_selections", []) if isinstance(item_data, dict) else []
+                for sel in selections:
+                    await self.selection_repository.create(
+                        order_item_id=order_item.id,
+                        subcategory_id=sel["subcategory_id"],
+                        option_id=sel["option_id"]
+                    )
         # Notificación eliminada (rol suprimido)
         # Si se requiere notificar, se haría a ADMIN, pero se omite para no mantener lógica exclusiva de cocinero
         return created_order

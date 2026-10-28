@@ -184,7 +184,7 @@ class OrderCreateRequest(BaseModel):
     """Order creation request. A waiter may identify a table by its number."""
     table_id: Optional[int] = Field(None, gt=0)
     table_number: Optional[int] = Field(None, gt=0)
-    items: list[OrderItemCreateRequest] = Field(..., min_length=1)
+    items: list[OrderItemWithSubcategories] = Field(..., min_length=1)
     notes: Optional[str] = None
 
 
