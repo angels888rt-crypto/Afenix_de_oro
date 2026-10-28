@@ -55,7 +55,6 @@ app.include_router(history_router.router)
 app.include_router(receipt_router.router)
 app.include_router(category_router.router)
 app.include_router(subcategory_router.router)
-app.include_router(subcategory_router.router)
 
 # Mount legacy static files
 app.mount("/static", StaticFiles(directory=static_dir), name="static")

@@ -6,7 +6,7 @@ from app.infrastructure.database.repositories import (
     OrderRepository, OrderItemRepository, DishRepository, NotificationRepository, TableRepository,
     OrderItemSubcategorySelectionRepository
 )
-from app.domain.entities import Order, OrderItem, Notification, OrderItemSubcategorySelection
+from app.domain.entities import Order, OrderItem, Notification
 from app.domain.services import OrderService, OrderItemService, NotificationService
 from app.shared.exceptions import ValidationException, ConflictException
 from app.shared.constants.enums import OrderStatus, OrderItemStatus, NotificationEvent

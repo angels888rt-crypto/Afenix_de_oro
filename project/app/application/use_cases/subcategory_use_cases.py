@@ -1,5 +1,5 @@
 """Use cases for subcategory management."""
-from typing import Optional, list
+from typing import Optional
 from app.infrastructure.database.repositories import (
     SubcategoryRepository, SubcategoryOptionRepository,
     DishSubcategoryRepository, DishRepository, OrderRepository

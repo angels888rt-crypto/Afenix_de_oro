@@ -2,9 +2,7 @@
 from fastapi import APIRouter, Depends, status, Query, HTTPException
 from app.infrastructure.database.repositories import (
     SubcategoryRepository, SubcategoryOptionRepository,
-    DishSubcategoryRepository, DishRepository,
-    get_subcategory_repository, get_subcategory_option_repository,
-    get_dish_subcategory_repository, get_dish_repository
+    DishSubcategoryRepository, DishRepository
 )
 from app.application.use_cases.subcategory_use_cases import (
     CreateSubcategoryUseCase, GetSubcategoryUseCase, ListSubcategoriesUseCase,
