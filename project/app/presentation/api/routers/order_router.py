@@ -442,7 +442,7 @@ async def update_order_status(
         from app.shared.exceptions import ValidationException
         raise ValidationException("Pedido no encontrado")
 
-    if current_user["role"] not in ("ADMIN", "CAMARERO", "CAJERO", "MONITOR"):
+    if current_user["role"] not in ("ADMIN", "CAJERO", "MONITOR"):
         raise HTTPException(status_code=403, detail="Rol no autorizado")
 
     prev_status = order.status

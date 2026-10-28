@@ -369,10 +369,8 @@ class UpdateOrderStatusUseCase:
             if current_status not in (OrderStatus.PENDIENTE.value, OrderStatus.NUEVO.value, OrderStatus.EN_COCINA.value):
                 raise ConflictException("Solo se pueden cancelar pedidos PENDIENTE o EN_COCINA")
         elif target_status == OrderStatus.ENTREGADO.value:
-            if role == "CAMARERO" and order.camarero_id != updated_by:
-                raise ConflictException("El mesero solo puede entregar pedidos que él creó")
-            if role not in ("CAMARERO", "ADMIN"):
-                raise ConflictException("Solo el mesero puede marcar pedidos como entregados")
+            if role not in ("ADMIN",):
+                raise ConflictException("Solo el administrador puede marcar pedidos como entregados")
             if current_status not in (OrderStatus.EN_COCINA.value, OrderStatus.COMPLETADO.value):
                 raise ConflictException("Solo se pueden entregar pedidos que estén EN COCINA")
         elif target_status == OrderStatus.PAGADO.value:
