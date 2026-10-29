@@ -91,13 +91,16 @@ def _ensure_subcategory_schema(sync_connection) -> None:
         "sort_order INTEGER NOT NULL DEFAULT 0",
     )
 
-    # Order item selections: align legacy tables with the ORM model (BaseModel fields).
+    # Order item selections: align legacy tables with the ORM model (BaseModel fields
+    # plus the descriptive columns some legacy deployments keep NOT NULL).
     for column_name, ddl in (
         ("created_at", "created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"),
         ("updated_at", "updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"),
         ("deleted_at", "deleted_at DATETIME NULL"),
         ("created_by", "created_by INTEGER NULL"),
         ("updated_by", "updated_by INTEGER NULL"),
+        ("subcategory_name", "subcategory_name VARCHAR(80) NOT NULL DEFAULT ''"),
+        ("option_name", "option_name VARCHAR(80) NOT NULL DEFAULT ''"),
     ):
         _add_column_if_missing(
             sync_connection,
