@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function loadDishCount(id) {
     try {
       const res = await api(`/api/v1/subcategories/${id}/dishes`);
-      const count = res.data ? res.data.length : 0;
+      const count = Array.isArray(res) ? res.length : 0;
       $('#dishCount-' + id).textContent = count + ' plato' + (count !== 1 ? 's' : '');
     } catch { $('#dishCount-' + id).textContent = '—'; }
   }
@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function loadOptCount(id) {
     try {
       const res = await api(`/api/v1/subcategories/${id}/options`);
-      const count = res.data ? res.data.length : 0;
+      const count = Array.isArray(res) ? res.length : 0;
       $('#optCount-' + id).textContent = count + ' opción' + (count !== 1 ? 's' : '');
     } catch { $('#optCount-' + id).textContent = '—'; }
   }
@@ -312,10 +312,13 @@ document.addEventListener('DOMContentLoaded', async () => {
           method: 'POST',
           body: JSON.stringify(payload)
         });
+        if (!created?.id) {
+          throw new Error('La subcategoría se creó, pero la respuesta no incluyó su identificador.');
+        }
         for (const opt of tempOptions) {
-          await api(`/api/v1/subcategories/${created.data.id}/options`, {
+          await api(`/api/v1/subcategories/${created.id}/options`, {
             method: 'POST',
-            body: JSON.stringify({ subcategory_id: created.data.id, name: opt.name, sort_order: opt.sort_order })
+            body: JSON.stringify({ subcategory_id: created.id, name: opt.name, sort_order: opt.sort_order })
           });
         }
         setMsg('Subcategoría creada.', true);

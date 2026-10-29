@@ -32,20 +32,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   async function loadSubcategories() {
     try {
-      const subcats = await api('/api/v1/subcategories?limit=100') || [];
-      const opts = await api('/api/v1/subcategories/options?limit=1000') || [];
-      const optsBySub = {};
-      (opts || []).forEach(o => {
-        if (!optsBySub[o.subcategory_id]) optsBySub[o.subcategory_id] = [];
-        optsBySub[o.subcategory_id].push(o);
-      });
-      for (const d of dishes) {
-        const linked = await api(`/api/v1/dishes/${d.id}/subcategories`) || [];
-        subcategoriesByDish[d.id] = linked.map(s => ({
-          ...s,
-          options: optsBySub[s.id] || []
-        }));
-      }
+      const dishSubcategories = await Promise.all(dishes.map(async dish => {
+        const linked = await api(`/api/v1/dishes/${dish.id}/subcategories`) || [];
+        return [dish.id, linked.map(subcategory => ({
+          ...subcategory,
+          options: Array.isArray(subcategory.options) ? subcategory.options : []
+        }))];
+      }));
+      subcategoriesByDish = Object.fromEntries(dishSubcategories);
     } catch (e) {
       console.error('Error cargando subcategorías:', e);
     }
@@ -99,6 +93,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             const imgHtml = img
               ? `<img src="${esc(img)}" alt="${esc(d.name)}" style="width:100%; height:120px; object-fit:cover; border-radius:10px; border:1px solid var(--line); margin-bottom:10px; ${disponible ? '' : 'filter:grayscale(0.6); opacity:0.6;'}">`
               : `<div style="width:100%; height:120px; display:flex; align-items:center; justify-content:center; background:#f6f1e7; border:1px solid var(--line); border-radius:10px; color:var(--muted); font-size:.85rem;">Sin imagen</div>`;
+            const badge = disponible
+              ? '<span style="display:inline-block; background:#e6f4e8; color:#246126; font-size:.7rem; font-weight:700; padding:4px 8px; border-radius:999px;">🟢 DISPONIBLE</span>'
+              : '<span style="display:inline-block; background:#f6e5e4; color:#8a2925; font-size:.7rem; font-weight:700; padding:4px 8px; border-radius:999px;">🔴 AGOTADO</span>';
             const subcats = subcategoriesByDish[d.id] || [];
             const mandatorySubcats = subcats.filter(s => s.is_active !== false);
             const subcatHtml = mandatorySubcats.map(s => {
@@ -115,9 +112,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }).join('');
             const selectionStatus = pendingSelections[d.id] ? 
               `<div class="selection-status" style="margin-top:6px; color:#246126; font-size:.75rem; font-weight:600;">✓ Seleccionado</div>` : '';
-
             if (!disponible) {
-              const badge = '<span style="display:inline-block; background:#f6e5e4; color:#8a2925; font-size:.7rem; font-weight:700; padding:4px 8px; border-radius:999px;">🔴 AGOTADO</span>';
               return `<article class="inventory-card" style="opacity:0.88;"><div style="margin-bottom:10px;">${imgHtml}</div><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;"><h3 style="margin:0; font-size:.9rem;">${esc(d.name)}</h3>${badge}</div><p class="muted">${money(d.price)} · <span style="color:#8a2925; font-weight:600;">AGOTADO</span></p></article>`;
             }
             return `<article class="inventory-card"><div style="margin-bottom:10px;">${imgHtml}</div><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;"><h3 style="margin:0; font-size:.9rem;">${esc(d.name)}</h3>${badge}</div><p class="muted">${money(d.price)} · Disponible</p>
@@ -221,7 +216,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Verificar que todas las subcategorías obligatorias tengan selección
         for (const s of mandatorySubcats) {
           if (!selected[s.id]) {
-            validationError = `Debes seleccionar "${esc(s.name)}" para el plato "${esc(d.name)}".`;
+            const dish = dishes.find(item => item.id === dishId);
+            validationError = `Debes seleccionar "${esc(s.name)}" para el plato "${esc(dish?.name || 'seleccionado')}".`;
             return;
           }
         }
