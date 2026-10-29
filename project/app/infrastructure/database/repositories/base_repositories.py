@@ -918,23 +918,10 @@ class OrderItemSubcategorySelectionRepository:
 
     async def create(self, order_item_id: int, subcategory_id: int, option_id: int) -> OrderItemSubcategorySelectionModel:
         """Create a selection for an order item."""
-        # Get names for denormalized storage
-        sub_result = await self.session.execute(
-            select(SubcategoryModel.name).where(SubcategoryModel.id == subcategory_id)
-        )
-        sub_name = sub_result.scalars().first() or ""
-
-        opt_result = await self.session.execute(
-            select(SubcategoryOptionModel.name).where(SubcategoryOptionModel.id == option_id)
-        )
-        opt_name = opt_result.scalars().first() or ""
-
         selection = OrderItemSubcategorySelectionModel(
             order_item_id=order_item_id,
             subcategory_id=subcategory_id,
             option_id=option_id,
-            subcategory_name=sub_name,
-            option_name=opt_name,
         )
         self.session.add(selection)
         await self.session.commit()
