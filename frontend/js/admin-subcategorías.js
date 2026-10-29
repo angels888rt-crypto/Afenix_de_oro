@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
   if (!Afenix.guardPage('ADMIN')) return;
   const $ = s => document.querySelector(s);
-  const { api, toast, esc } = Afenix;
+  const { api, toast, esc, money } = Afenix;
 
   let subcats = [];
   let allDishes = [];
