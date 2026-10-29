@@ -80,6 +80,20 @@ def _ensure_subcategory_schema(sync_connection) -> None:
             )
         )
 
+    selection_columns = {
+        column["name"]
+        for column in inspect(sync_connection).get_columns(
+            "order_item_subcategory_selections"
+        )
+    }
+    if "updated_at" not in selection_columns:
+        sync_connection.execute(
+            text(
+                "ALTER TABLE order_item_subcategory_selections "
+                "ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"
+            )
+        )
+
 
 async def ensure_subcategory_schema() -> None:
     """Ensure subcategory tables match the current ORM models."""

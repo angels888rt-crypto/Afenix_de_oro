@@ -25,6 +25,15 @@ def test_ensure_subcategory_schema_adds_fields_missing_from_legacy_tables() -> N
                     "created_by INTEGER, updated_by INTEGER)"
                 )
             )
+            connection.execute(
+                text(
+                    "CREATE TABLE order_item_subcategory_selections ("
+                    "id INTEGER PRIMARY KEY, order_item_id INTEGER NOT NULL, "
+                    "subcategory_id INTEGER NOT NULL, option_id INTEGER NOT NULL, "
+                    "created_at DATETIME NOT NULL, deleted_at DATETIME, "
+                    "created_by INTEGER, updated_by INTEGER)"
+                )
+            )
 
             _ensure_subcategory_schema(connection)
 
@@ -36,8 +45,15 @@ def test_ensure_subcategory_schema_adds_fields_missing_from_legacy_tables() -> N
                 column["name"]
                 for column in inspect(connection).get_columns("subcategory_options")
             }
+            selection_columns = {
+                column["name"]
+                for column in inspect(connection).get_columns(
+                    "order_item_subcategory_selections"
+                )
+            }
 
         assert "is_active" in subcategory_columns
         assert "sort_order" in option_columns
+        assert "updated_at" in selection_columns
     finally:
         engine.dispose()
