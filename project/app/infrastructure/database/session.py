@@ -37,6 +37,28 @@ def column_exists(columns: list[dict], column_name: str) -> bool:
 from app.infrastructure.database.models.database_models import UserModel
 
 
+def _column_names(sync_connection, table_name: str) -> set[str]:
+    return {
+        column["name"]
+        for column in inspect(sync_connection).get_columns(table_name)
+    }
+
+
+def _add_column_if_missing(sync_connection, table_name: str, column_name: str, ddl: str) -> None:
+    """Add a column to an existing table when it is missing."""
+    try:
+        columns = _column_names(sync_connection, table_name)
+    except Exception:
+        return
+    if column_name in columns:
+        return
+    try:
+        sync_connection.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {ddl}"))
+    except Exception:
+        # Ignore duplicate/unsupported column errors so startup is not blocked.
+        pass
+
+
 def _ensure_subcategory_schema(sync_connection) -> None:
     """Create subcategory tables and add fields missing from the original migration."""
     from app.infrastructure.database.models import (
@@ -57,48 +79,42 @@ def _ensure_subcategory_schema(sync_connection) -> None:
         ],
     )
 
-    inspector = inspect(sync_connection)
-    subcategory_columns = {
-        column["name"] for column in inspector.get_columns("subcategories")
-    }
-    if "is_active" not in subcategory_columns:
-        sync_connection.execute(
-            text(
-                "ALTER TABLE subcategories "
-                "ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE"
-            )
-        )
+    # Subcategories: ensure is_active exists for legacy deployments.
+    _add_column_if_missing(
+        sync_connection, "subcategories", "is_active",
+        "is_active BOOLEAN NOT NULL DEFAULT TRUE",
+    )
 
-    option_columns = {
-        column["name"] for column in inspector.get_columns("subcategory_options")
-    }
-    if "sort_order" not in option_columns:
-        sync_connection.execute(
-            text(
-                "ALTER TABLE subcategory_options "
-                "ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0"
-            )
-        )
+    # Subcategory options: ensure sort_order exists for legacy deployments.
+    _add_column_if_missing(
+        sync_connection, "subcategory_options", "sort_order",
+        "sort_order INTEGER NOT NULL DEFAULT 0",
+    )
 
-    selection_columns = {
-        column["name"]
-        for column in inspect(sync_connection).get_columns(
-            "order_item_subcategory_selections"
-        )
-    }
-    if "updated_at" not in selection_columns:
-        sync_connection.execute(
-            text(
-                "ALTER TABLE order_item_subcategory_selections "
-                "ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"
-            )
+    # Order item selections: align legacy tables with the ORM model (BaseModel fields).
+    for column_name, ddl in (
+        ("created_at", "created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"),
+        ("updated_at", "updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"),
+        ("deleted_at", "deleted_at DATETIME NULL"),
+        ("created_by", "created_by INTEGER NULL"),
+        ("updated_by", "updated_by INTEGER NULL"),
+    ):
+        _add_column_if_missing(
+            sync_connection,
+            "order_item_subcategory_selections",
+            column_name,
+            ddl,
         )
 
 
 async def ensure_subcategory_schema() -> None:
     """Ensure subcategory tables match the current ORM models."""
-    async with engine.begin() as connection:
-        await connection.run_sync(_ensure_subcategory_schema)
+    try:
+        async with engine.begin() as connection:
+            await connection.run_sync(_ensure_subcategory_schema)
+    except Exception:
+        # Never block application startup on schema repair failures.
+        pass
 
 
 async def ensure_users_table():
