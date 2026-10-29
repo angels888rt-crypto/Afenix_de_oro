@@ -249,6 +249,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const name = $subName.value.trim();
     const desc = $subDesc.value.trim() || null;
     if (name.length < 2) { setMsg('El nombre debe tener al menos 2 caracteres.'); return; }
+    const duplicate = subcats.find(sub =>
+      sub.name.trim().toLowerCase() === name.toLowerCase() &&
+      String(sub.id) !== String(editingId)
+    );
+    if (duplicate) {
+      setMsg(`Ya existe la subcategoría "${duplicate.name}". Edita la existente o elige otro nombre.`);
+      return;
+    }
     if (!tempOptions.length) { setMsg('Debe agregar al menos una opción.'); return; }
     if (!selectedDishIds.size) { setMsg('Debe seleccionar al menos un plato.'); return; }
     try {
