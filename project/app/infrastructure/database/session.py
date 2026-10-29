@@ -36,6 +36,57 @@ def column_exists(columns: list[dict], column_name: str) -> bool:
 
 from app.infrastructure.database.models.database_models import UserModel
 
+
+def _ensure_subcategory_schema(sync_connection) -> None:
+    """Create subcategory tables and add fields missing from the original migration."""
+    from app.infrastructure.database.models import (
+        Base,
+        SubcategoryModel,
+        SubcategoryOptionModel,
+        DishSubcategoryModel,
+        OrderItemSubcategorySelectionModel,
+    )
+
+    Base.metadata.create_all(
+        sync_connection,
+        tables=[
+            SubcategoryModel.__table__,
+            SubcategoryOptionModel.__table__,
+            DishSubcategoryModel.__table__,
+            OrderItemSubcategorySelectionModel.__table__,
+        ],
+    )
+
+    inspector = inspect(sync_connection)
+    subcategory_columns = {
+        column["name"] for column in inspector.get_columns("subcategories")
+    }
+    if "is_active" not in subcategory_columns:
+        sync_connection.execute(
+            text(
+                "ALTER TABLE subcategories "
+                "ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE"
+            )
+        )
+
+    option_columns = {
+        column["name"] for column in inspector.get_columns("subcategory_options")
+    }
+    if "sort_order" not in option_columns:
+        sync_connection.execute(
+            text(
+                "ALTER TABLE subcategory_options "
+                "ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0"
+            )
+        )
+
+
+async def ensure_subcategory_schema() -> None:
+    """Ensure subcategory tables match the current ORM models."""
+    async with engine.begin() as connection:
+        await connection.run_sync(_ensure_subcategory_schema)
+
+
 async def ensure_users_table():
     """Crea la tabla de usuarios si no existe en la base de datos."""
     try:

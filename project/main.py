@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.infrastructure.config import settings
-from app.infrastructure.database.session import ensure_dishes_availability_column, ensure_history_table, ensure_order_daily_columns, ensure_receipt_config_table, ensure_dish_image_column, ensure_order_pagado_status, ensure_order_paid_at_column
+from app.infrastructure.database.session import ensure_dishes_availability_column, ensure_history_table, ensure_order_daily_columns, ensure_receipt_config_table, ensure_dish_image_column, ensure_order_pagado_status, ensure_order_paid_at_column, ensure_subcategory_schema
 from app.presentation.api.middleware.exception_handlers import register_exception_handlers
 from app.presentation.api.routers import (
     user_router, table_router, dish_router, order_router, notification_router,
@@ -70,6 +70,7 @@ async def startup_event() -> None:
     await ensure_receipt_config_table()
     await ensure_order_pagado_status()
     await ensure_order_paid_at_column()
+    await ensure_subcategory_schema()
     try:
         from app.infrastructure.database.models.database_models import UserModel
         UserModel()
