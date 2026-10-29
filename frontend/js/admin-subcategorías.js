@@ -7,8 +7,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   let allDishes = [];
   let editingId = null;
   let editingSubcat = null;
-  let tempOptions = []; // {name, sort_order}
+  let tempOptions = [];
+  let originalOptions = [];
   let selectedDishIds = new Set();
+  let originalDishIds = new Set();
   let dishesLoading = true;
   let dishesLoadError = '';
 
@@ -31,7 +33,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     editingId = null;
     editingSubcat = null;
     tempOptions = [];
+    originalOptions = [];
     selectedDishIds = new Set();
+    originalDishIds = new Set();
     $subForm().reset();
     $subId.value = '';
     $('#formTitle').textContent = 'Crear subcategoría';
@@ -145,20 +149,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch { $('#optCount-' + id).textContent = '—'; }
   }
 
-  function startEdit(s) {
-    editingId = s.id;
-    editingSubcat = s;
-    $subId.value = s.id;
-    $subName.value = s.name;
-    $subDesc.value = s.description || '';
-    $('#formTitle').textContent = 'Editar subcategoría';
-    $editor.style.display = 'block';
-    tempOptions = [];
-    selectedDishIds = new Set();
-    renderOptions();
-    renderDishes();
-    $subName.focus();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  async function startEdit(s) {
+    try {
+      const [options, dishIds] = await Promise.all([
+        api(`/api/v1/subcategories/${s.id}/options`),
+        api(`/api/v1/subcategories/${s.id}/dishes`)
+      ]);
+      editingId = s.id;
+      editingSubcat = s;
+      $subId.value = s.id;
+      $subName.value = s.name;
+      $subDesc.value = s.description || '';
+      $('#formTitle').textContent = 'Editar subcategoría';
+      $editor.style.display = 'block';
+      originalOptions = Array.isArray(options) ? options : [];
+      tempOptions = originalOptions.map(option => ({ ...option }));
+      originalDishIds = new Set(Array.isArray(dishIds) ? dishIds.map(Number) : []);
+      selectedDishIds = new Set(originalDishIds);
+      renderOptions();
+      renderDishes();
+      $subName.focus();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (error) {
+      toast(`No se pudo cargar la subcategoría: ${error.message}`, 'error');
+    }
   }
 
   function renderOptions() {
@@ -266,18 +280,31 @@ document.addEventListener('DOMContentLoaded', async () => {
           method: 'PUT',
           body: JSON.stringify({ name, description: desc })
         });
-        // Update options: delete all and recreate
-        const existing = await api(`/api/v1/subcategories/${editingId}/options`);
-        const opts = existing.data || [];
-        for (const o of opts) {
-          await api(`/api/v1/subcategories/options/${o.id}`, { method: 'DELETE' });
+        const retainedOptionIds = new Set(
+          tempOptions.filter(option => option.id).map(option => option.id)
+        );
+        for (const option of originalOptions) {
+          if (!retainedOptionIds.has(option.id)) {
+            await api(`/api/v1/subcategories/options/${option.id}`, { method: 'DELETE' });
+          }
         }
         for (const opt of tempOptions) {
-          await api(`/api/v1/subcategories/${editingId}/options`, {
-            method: 'POST',
-            body: JSON.stringify({ subcategory_id: editingId, name: opt.name, sort_order: opt.sort_order })
-          });
+          if (opt.id) {
+            await api(`/api/v1/subcategories/options/${opt.id}`, {
+              method: 'PUT',
+              body: JSON.stringify({ name: opt.name, sort_order: opt.sort_order })
+            });
+          } else {
+            await api(`/api/v1/subcategories/${editingId}/options`, {
+              method: 'POST',
+              body: JSON.stringify({ subcategory_id: editingId, name: opt.name, sort_order: opt.sort_order })
+            });
+          }
         }
+        await api(`/api/v1/subcategories/${editingId}/dishes`, {
+          method: 'PUT',
+          body: JSON.stringify({ dish_ids: payload.dish_ids })
+        });
         setMsg('Subcategoría actualizada.', true);
         toast('Subcategoría actualizada');
       } else {

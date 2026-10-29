@@ -255,6 +255,45 @@ class LinkDishesToSubcategoryUseCase:
         return linked
 
 
+class SetDishesForSubcategoryUseCase:
+    """Replace the dishes linked to a subcategory."""
+
+    def __init__(self, dish_sub_repository: DishSubcategoryRepository,
+                 dish_repository: DishRepository,
+                 subcategory_repository: SubcategoryRepository):
+        self.dish_sub_repository = dish_sub_repository
+        self.dish_repository = dish_repository
+        self.subcategory_repository = subcategory_repository
+
+    async def execute(self, subcategory_id: int, dish_ids: list[int]) -> list[int]:
+        subcategory = await self.subcategory_repository.get_by_id(subcategory_id)
+        if not subcategory:
+            raise ValidationException("Subcategoría no encontrada")
+
+        valid_dish_ids = []
+        for dish_id in dict.fromkeys(dish_ids):
+            if not await self.dish_repository.get_by_id(dish_id):
+                raise ValidationException(f"Plato con ID {dish_id} no encontrado")
+            valid_dish_ids.append(dish_id)
+
+        current_dish_ids = await self.dish_sub_repository.get_dishes_for_subcategory(
+            subcategory_id
+        )
+        selected_ids = set(valid_dish_ids)
+        for dish_id in current_dish_ids:
+            if dish_id not in selected_ids:
+                await self.dish_sub_repository.unlink_dish_from_subcategory(
+                    dish_id, subcategory_id
+                )
+
+        for dish_id in valid_dish_ids:
+            await self.dish_sub_repository.link_dish_to_subcategory(
+                dish_id, subcategory_id
+            )
+
+        return valid_dish_ids
+
+
 class GetSubcategoriesForDishUseCase:
     """Use case for getting subcategories for a dish."""
 

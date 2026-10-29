@@ -9,7 +9,8 @@ from app.application.use_cases.subcategory_use_cases import (
     UpdateSubcategoryUseCase, DeleteSubcategoryUseCase,
     CreateSubcategoryOptionUseCase, GetSubcategoryOptionsUseCase,
     UpdateSubcategoryOptionUseCase, DeleteSubcategoryOptionUseCase,
-    LinkDishesToSubcategoryUseCase, GetSubcategoriesForDishUseCase,
+    LinkDishesToSubcategoryUseCase, SetDishesForSubcategoryUseCase,
+    GetSubcategoriesForDishUseCase,
     GetDishesForSubcategoryUseCase
 )
 from app.application.dto import (
@@ -244,6 +245,24 @@ async def link_dishes_to_subcategory(
                        f"{len(linked)} platos vinculados a subcategoría {subcategory_id}",
                        current_user["user_id"], current_user.get("username"))
     return ResponseSchema(success=True, message="Platos vinculados", data=linked)
+
+
+@router.put("/{subcategory_id}/dishes", response_model=ResponseSchema[list[int]])
+async def set_dishes_for_subcategory(
+    subcategory_id: int,
+    request: DishSubcategoryLinkRequest,
+    current_user: dict = Depends(get_current_user),
+    dish_sub_repo: DishSubcategoryRepository = Depends(get_dish_subcategory_repository),
+    dish_repo: DishRepository = Depends(get_dish_repository),
+    subcategory_repo: SubcategoryRepository = Depends(get_subcategory_repository),
+):
+    """Replace the dishes assigned to a subcategory (admin only)."""
+    await require_role("ADMIN")(current_user)
+    use_case = SetDishesForSubcategoryUseCase(
+        dish_sub_repo, dish_repo, subcategory_repo
+    )
+    dish_ids = await use_case.execute(subcategory_id, request.dish_ids)
+    return ResponseSchema(success=True, message="Platos actualizados", data=dish_ids)
 
 
 async def _log_history(history_repo, category, action, entity_type,
