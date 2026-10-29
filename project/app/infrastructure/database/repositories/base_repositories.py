@@ -428,6 +428,14 @@ class DishRepository:
         db_dish = result.scalars().first()
         if not db_dish:
             return False
+        from app.infrastructure.database.models import DishSubcategoryModel
+        links_result = await self.session.execute(
+            select(DishSubcategoryModel).where(
+                DishSubcategoryModel.dish_id == dish_id
+            )
+        )
+        for link in links_result.scalars().all():
+            await self.session.delete(link)
         db_dish.deleted_at = datetime.now(timezone.utc)
         db_dish.is_available = False
         db_dish.updated_at = datetime.now(timezone.utc)
@@ -682,15 +690,16 @@ class SubcategoryRepository:
         subs = result.scalars().all()
         return [self._to_domain(sub) for sub in subs]
 
-    async def count_dishes(self, subcategory_name: str) -> int:
-        """Count dishes associated with a subcategory."""
-        from app.infrastructure.database.models import DishSubcategoryModel
+    async def count_dishes(self, subcategory_id: int) -> int:
+        """Count active dishes associated with a subcategory."""
+        from app.infrastructure.database.models import DishSubcategoryModel, DishModel
         result = await self.session.execute(
-            select(func.count(DishSubcategoryModel.dish_id)).where(
-                DishSubcategoryModel.subcategory_id == select(SubcategoryModel.id).where(
-                    SubcategoryModel.name == subcategory_name,
-                    SubcategoryModel.deleted_at.is_(None)
-                ).scalar_subquery()
+            select(func.count(DishSubcategoryModel.dish_id))
+            .select_from(DishSubcategoryModel)
+            .join(DishModel, DishModel.id == DishSubcategoryModel.dish_id)
+            .where(
+                DishSubcategoryModel.subcategory_id == subcategory_id,
+                DishModel.deleted_at.is_(None),
             )
         )
         return result.scalar() or 0
@@ -867,9 +876,14 @@ class DishSubcategoryRepository:
 
     async def get_dishes_for_subcategory(self, subcategory_id: int) -> list[int]:
         """Get all dish IDs for a subcategory."""
+        from app.infrastructure.database.models import DishModel
         result = await self.session.execute(
-            select(DishSubcategoryModel.dish_id).where(
-                DishSubcategoryModel.subcategory_id == subcategory_id
+            select(DishSubcategoryModel.dish_id)
+            .select_from(DishSubcategoryModel)
+            .join(DishModel, DishModel.id == DishSubcategoryModel.dish_id)
+            .where(
+                DishSubcategoryModel.subcategory_id == subcategory_id,
+                DishModel.deleted_at.is_(None),
             )
         )
         return [row[0] for row in result.all()]

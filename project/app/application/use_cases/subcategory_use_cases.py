@@ -134,7 +134,7 @@ class DeleteSubcategoryUseCase:
         subcat = await self.subcategory_repository.get_by_id(subcategory_id)
         if not subcat:
             raise ValidationException("Subcategoría no encontrada")
-        count = await self.subcategory_repository.count_dishes(subcat.name)
+        count = await self.subcategory_repository.count_dishes(subcat.id)
         if count > 0:
             raise ValidationException(
                 f"No se puede eliminar la subcategoría '{subcat.name}' porque tiene {count} plato(s) asociado(s)."

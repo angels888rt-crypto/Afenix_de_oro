@@ -80,10 +80,6 @@ def get_history_repository(session: AsyncSession = Depends(get_session)):
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security_scheme)):
     """Get current authenticated user from token."""
-    # 🕵️‍♂️ ESPÍA TEMPORAL
-    print("--- DETECTANDO CREDENCIALES ---")
-    print("Objeto credentials:", credentials)
-    print("Token extraído:", credentials.credentials if credentials else "Ninguno")
     token = credentials.credentials
     if not token:
         raise HTTPException(
@@ -126,4 +122,3 @@ def require_role(*allowed_roles):
         return current_user
     
     return role_checker
-
