@@ -288,12 +288,22 @@ class SubcategoryOptionModel(BaseModel):
     )
 
 
-class DishSubcategoryModel(BaseModel):
+class DishSubcategoryModel(Base):
     """Link between dishes and subcategories - many to many."""
     __tablename__ = "dish_subcategories"
 
-    dish_id = Column(Integer, ForeignKey("dishes.id", ondelete="CASCADE"), nullable=False, index=True)
-    subcategory_id = Column(Integer, ForeignKey("subcategories.id", ondelete="CASCADE"), nullable=False, index=True)
+    dish_id = Column(
+        Integer,
+        ForeignKey("dishes.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    )
+    subcategory_id = Column(
+        Integer,
+        ForeignKey("subcategories.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    )
 
     __table_args__ = (
         Index("idx_dish_subcategory_dish", "dish_id"),
@@ -314,5 +324,4 @@ class OrderItemSubcategorySelectionModel(BaseModel):
         Index("idx_selection_subcategory", "subcategory_id"),
         Index("idx_selection_option", "option_id"),
     )
-
 
