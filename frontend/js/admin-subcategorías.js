@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   let editingSubcat = null;
   let tempOptions = []; // {name, sort_order}
   let selectedDishIds = new Set();
+  let dishesLoading = true;
+  let dishesLoadError = '';
 
   const $subName = $('#subName');
   const $subDesc = $('#subDesc');
@@ -42,11 +44,35 @@ document.addEventListener('DOMContentLoaded', async () => {
   function $subForm() { return $('#subcatForm'); }
 
   async function load() {
-    try {
-      subcats = await api('/api/v1/subcategories?limit=100') || [];
-      allDishes = await api('/api/v1/dishes?limit=100') || [];
-      renderList();
-    } catch (e) { toast(e.message, 'error'); }
+    dishesLoading = true;
+    dishesLoadError = '';
+    renderDishes();
+
+    const subcategoriesRequest = api('/api/v1/subcategories?limit=100')
+      .then(data => {
+        subcats = data || [];
+        renderList();
+      })
+      .catch(error => {
+        toast(error.message, 'error');
+        $subcatsList.innerHTML = `<p class="muted">No se pudieron cargar las subcategorías: ${esc(error.message)}</p>`;
+      });
+
+    const dishesRequest = api('/api/v1/dishes?limit=100')
+      .then(data => {
+        allDishes = Array.isArray(data) ? data : [];
+      })
+      .catch(error => {
+        allDishes = [];
+        dishesLoadError = error.message;
+        toast(error.message, 'error');
+      })
+      .finally(() => {
+        dishesLoading = false;
+        renderDishes();
+      });
+
+    await Promise.all([subcategoriesRequest, dishesRequest]);
   }
 
   function renderList() {
@@ -173,6 +199,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function renderDishes() {
+    if (dishesLoading) {
+      $dishBoxes.innerHTML = '<p class="muted">Cargando platos...</p>';
+      return;
+    }
+    if (dishesLoadError) {
+      $dishBoxes.innerHTML = `<p class="muted">No se pudieron cargar los platos: ${esc(dishesLoadError)}</p>`;
+      return;
+    }
     if (!allDishes.length) {
       $dishBoxes.innerHTML = '<p class="muted">No hay platos disponibles.</p>';
       return;
