@@ -604,16 +604,38 @@ class SubcategoryRepository:
         sub = result.scalars().first()
         return self._to_domain(sub) if sub else None
 
-    async def get_by_name(self, name: str) -> Optional[Subcategory]:
+    async def get_by_name(
+        self, name: str, include_deleted: bool = False
+    ) -> Optional[Subcategory]:
         """Get subcategory by name."""
-        result = await self.session.execute(
-            select(SubcategoryModel).where(
-                SubcategoryModel.name.ilike(name),
-                SubcategoryModel.deleted_at.is_(None)
-            )
-        )
+        stmt = select(SubcategoryModel).where(SubcategoryModel.name.ilike(name))
+        if not include_deleted:
+            stmt = stmt.where(SubcategoryModel.deleted_at.is_(None))
+        result = await self.session.execute(stmt)
         sub = result.scalars().first()
         return self._to_domain(sub) if sub else None
+
+    async def restore(
+        self, subcategory_id: int, subcategory: Subcategory
+    ) -> Optional[Subcategory]:
+        """Restore a soft-deleted subcategory and update its submitted fields."""
+        result = await self.session.execute(
+            select(SubcategoryModel).where(SubcategoryModel.id == subcategory_id)
+        )
+        db_sub = result.scalars().first()
+        if not db_sub:
+            return None
+
+        db_sub.name = subcategory.name
+        db_sub.description = subcategory.description
+        db_sub.is_active = True
+        db_sub.deleted_at = None
+        db_sub.updated_at = datetime.now(timezone.utc)
+        db_sub.updated_by = subcategory.updated_by
+
+        await self.session.commit()
+        await self.session.refresh(db_sub)
+        return self._to_domain(db_sub)
 
     async def update(self, subcategory_id: int, subcategory: Subcategory) -> Optional[Subcategory]:
         """Update subcategory."""
@@ -925,4 +947,3 @@ class OrderItemSubcategorySelectionRepository:
             await self.session.delete(sel)
         await self.session.commit()
         return True
-

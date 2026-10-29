@@ -7,6 +7,7 @@ from app.infrastructure.database.repositories import (
 from app.domain.entities import Subcategory, SubcategoryOption
 from app.shared.exceptions import ValidationException, DuplicateResourceException
 from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
 
 
 class CreateSubcategoryUseCase:
@@ -26,16 +27,33 @@ class CreateSubcategoryUseCase:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                                 detail="El nombre no puede superar 80 caracteres")
 
-        existing = await self.subcategory_repository.get_by_name(name)
-        if existing:
+        existing = await self.subcategory_repository.get_by_name(
+            name, include_deleted=True
+        )
+        subcat = Subcategory(
+            name=name, description=description,
+            is_active=True, created_by=created_by, updated_by=created_by
+        )
+        if existing and existing.deleted_at is None:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                                 detail=f"La subcategoría '{name}' ya existe")
 
-        subcat = Subcategory(
-            name=name, description=description,
-            is_active=True, created_by=created_by
-        )
-        created = await self.subcategory_repository.create(subcat)
+        if existing:
+            created = await self.subcategory_repository.restore(existing.id, subcat)
+            if not created:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="No se pudo restaurar la subcategoría eliminada",
+                )
+        else:
+            try:
+                created = await self.subcategory_repository.create(subcat)
+            except IntegrityError as exc:
+                await self.subcategory_repository.session.rollback()
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"La subcategoría '{name}' ya existe",
+                ) from exc
 
         # Link dishes if provided
         if dish_ids:
