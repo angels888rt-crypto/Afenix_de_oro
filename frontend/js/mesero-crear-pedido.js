@@ -139,7 +139,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (Object.keys(pendingSelections[dishId]).length === 0) delete pendingSelections[dishId];
         }
         updateSelectionStatus(dishId);
-        updateTotal();
+        // Las subcategorías son solo características del plato (color, tamaño, picante),
+        // nunca modifican el precio ni generan subtotal propio. El importe se calcula
+        // únicamente como cantidad × precio del plato al cambiar el campo Cantidad.
       });
     });
 
