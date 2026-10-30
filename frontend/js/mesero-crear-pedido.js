@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             return `<article class="inventory-card"><div style="margin-bottom:10px;">${imgHtml}</div><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;"><h3 style="margin:0; font-size:.9rem;">${esc(d.name)}</h3>${badge}</div><p class="muted">${money(d.price)} · Disponible</p>
               ${subcatHtml}
               ${selectionStatus}
-              <div class="field" style="margin-top:8px;"><label for="q${d.id}">Cantidad</label><input id="q${d.id}" data-dish="${d.id}" type="number" min="0" value="" placeholder="Cant" inputmode="numeric" style="width:80px;"></div><div class="line-total" id="line${d.id}">Subtotal: ${money(0)}</div></article>`;
+              <div class="field" style="margin-top:8px;"><label for="q${d.id}">Cantidad</label><input id="q${d.id}" data-dish="${d.id}" type="number" min="0" value="" placeholder="Cant" inputmode="numeric" style="width:80px;"></div><div class="line-total" id="line${d.id}" style="display:none;">Subtotal: ${money(0)}</div></article>`;
           }).join('')}
         </div>
       </div>`;
@@ -139,6 +139,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (Object.keys(pendingSelections[dishId]).length === 0) delete pendingSelections[dishId];
         }
         updateSelectionStatus(dishId);
+        updateTotal();
       });
     });
 
@@ -161,7 +162,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       const d = dishes.find(x => String(x.id) === String(changed.dataset.dish));
       const q = Number(changed.value) || 0;
       const line = $(`#line${d.id}`);
-      if (line) line.textContent = `Subtotal: ${money(q * (Number(d?.price) || 0))}`;
+      if (line) {
+        line.textContent = `Subtotal: ${money(q * (Number(d?.price) || 0))}`;
+        // Solo mostrar el subtotal de línea cuando hay cantidadIngresada.
+        line.style.display = q > 0 ? '' : 'none';
+      }
     }
     let totalCents = 0;
     document.querySelectorAll('[data-dish]').forEach(i => {
