@@ -4,7 +4,7 @@ from typing import Optional
 
 from sqlalchemy import (
     Column, Integer, String, Boolean, Text, DateTime, ForeignKey, UniqueConstraint,
-    Index, CheckConstraint
+    Index, CheckConstraint, LargeBinary
 )
 from sqlalchemy.orm import declarative_base, relationship
 
@@ -237,6 +237,8 @@ class ReceiptConfigModel(Base):
     restaurant_name = Column(String(100), nullable=False, default="RESTAURANTE")
     footer_message = Column(Text, nullable=False, default="¡Gracias por su visita!")
     logo_path = Column(String(255), nullable=True)
+    logo_data = Column(LargeBinary, nullable=True)
+    logo_content_type = Column(String(50), nullable=True)
     created_at = Column(
         DateTime,
         default=lambda: datetime.now(timezone.utc),

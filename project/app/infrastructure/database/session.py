@@ -226,6 +226,22 @@ async def ensure_receipt_config_table() -> None:
                     return
                 Base.metadata.create_all(sync_connection, tables=[Base.metadata.tables["receipt_config"]])
             await connection.run_sync(create_table)
+            # Asegurar columnas de logo en BD para despliegues existentes sin migración.
+            def ensure_logo_columns(sync_connection):
+                from sqlalchemy import text as sa_text
+                inspector = inspect(sync_connection)
+                cols = {c["name"] for c in inspector.get_columns("receipt_config")}
+                if "logo_data" not in cols:
+                    try:
+                        sync_connection.execute(sa_text("ALTER TABLE receipt_config ADD COLUMN logo_data LONGBLOB NULL"))
+                    except Exception:
+                        pass
+                if "logo_content_type" not in cols:
+                    try:
+                        sync_connection.execute(sa_text("ALTER TABLE receipt_config ADD COLUMN logo_content_type VARCHAR(50) NULL"))
+                    except Exception:
+                        pass
+            await connection.run_sync(ensure_logo_columns)
             # Asegurar registro por defecto id=1
             def ensure_row(sync_connection):
                 from sqlalchemy import text as sa_text

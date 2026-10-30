@@ -1,10 +1,8 @@
 """Receipt config API router — ADMIN configures, CAMARERO reads for thermal receipt."""
-import os
-import uuid
-from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,28 +13,26 @@ from app.shared.responses import ResponseSchema
 from app.presentation.api.dependencies.auth_dependencies import get_current_user, require_role
 
 from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/v1/receipt-config", tags=["ReceiptConfig"])
 
-# Directorio donde se guardan los logos
-project_root = Path(__file__).resolve().parents[4]  # project/
-static_dir = project_root / "static"
-uploads_dir = static_dir / "uploads"
-uploads_dir.mkdir(parents=True, exist_ok=True)
-static_dir.mkdir(parents=True, exist_ok=True)
-
 DEFAULT_NAME = "RESTAURANTE"
 DEFAULT_FOOTER = "¡Gracias por su visita!"
+# El logo se guarda en base de datos (no en disco) para funcionar en contenedores
+# de sólo lectura (hostless) y sobrevivir a redeploys.
 ALLOWED_CONTENT_TYPES = {"image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif"}
 MAX_SIZE = 2 * 1024 * 1024  # 2MB
 
+LOGO_URL = "/api/v1/receipt-config/logo"
+
+
 def _to_response(model: ReceiptConfigModel) -> ReceiptConfigResponse:
     logo_url = None
-    if model.logo_path:
-        # logo_path es como /static/uploads/xxx.png -> ya es URL
-        # Si empieza con /static, lo dejamos tal cual, si no, lo prefijamos
+    # Si hay logo guardado en BD, lo servimos por endpoint (sobrevive a redeploys de contenedor).
+    if model.logo_data:
+        logo_url = LOGO_URL
+    elif model.logo_path:
+        # Fallback: ruta de archivo legacy (solo funciona si el disco es escribible).
         if model.logo_path.startswith("/"):
             logo_url = model.logo_path
         else:
@@ -97,13 +93,23 @@ async def update_receipt_config(
     await session.refresh(cfg)
     return ResponseSchema(success=True, message="Configuración actualizada", data=_to_response(cfg))
 
+@router.get("/logo")
+async def get_logo(
+    session: AsyncSession = Depends(get_session),
+):
+    """Sirve el logo del recibo desde la base de datos."""
+    cfg = await _get_or_create(session)
+    if not cfg.logo_data:
+        raise HTTPException(status_code=404, detail="No hay logo configurado")
+    return Response(content=cfg.logo_data, media_type=cfg.logo_content_type or "image/png")
+
 @router.post("/logo", response_model=ResponseSchema[ReceiptConfigResponse])
 async def upload_logo(
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
-    """Sube logo. Solo ADMIN. Guarda en /static/uploads/ y actualiza config."""
+    """Sube logo. Solo ADMIN. Guarda en base de datos (no en disco) para funcionar en contenedores de sólo lectura."""
     await require_role("ADMIN")(current_user)
 
     if file.content_type not in ALLOWED_CONTENT_TYPES:
@@ -115,35 +121,11 @@ async def upload_logo(
     if len(content) == 0:
         raise HTTPException(status_code=400, detail="Archivo vacío.")
 
-    # Determinar extensión
-    ext = Path(file.filename or "").suffix.lower()
-    if ext not in [".png", ".jpg", ".jpeg", ".webp", ".gif"]:
-        # fallback según content-type
-        mapping = {"image/png": ".png", "image/jpeg": ".jpg", "image/jpg": ".jpg", "image/webp": ".webp", "image/gif": ".gif"}
-        ext = mapping.get(file.content_type, ".png")
-
-    filename = f"receipt_logo_{uuid.uuid4().hex}{ext}"
-    # Limpiar logos antiguos para no acumular
-    # Guardar nuevo
-    dest = uploads_dir / filename
-    with open(dest, "wb") as f:
-        f.write(content)
-
-    # Opcional: borrar logo anterior si existe
     cfg = await _get_or_create(session)
-    if cfg.logo_path:
-        try:
-            old_path = static_dir / Path(cfg.logo_path.lstrip("/")).relative_to("static") if cfg.logo_path.startswith("/static") else Path(cfg.logo_path)
-            # old_path ya es uploads/..., intentar borrar
-            old_full = static_dir / Path(cfg.logo_path.replace("/static/", "").lstrip("/"))
-            if old_full.exists() and old_full.is_file():
-                # No borrar si es el mismo archivo recién subido
-                if old_full.resolve() != dest.resolve():
-                    old_full.unlink(missing_ok=True)
-        except Exception:
-            pass
-
-    cfg.logo_path = f"/static/uploads/{filename}"
+    cfg.logo_data = content
+    cfg.logo_content_type = file.content_type
+    # Mantener logo_path limpio (ya no apunta a archivo en disco)
+    cfg.logo_path = None
     await session.commit()
     await session.refresh(cfg)
     return ResponseSchema(success=True, message="Logo actualizado", data=_to_response(cfg))
@@ -156,13 +138,8 @@ async def delete_logo(
     """Elimina logo. Solo ADMIN."""
     await require_role("ADMIN")(current_user)
     cfg = await _get_or_create(session)
-    if cfg.logo_path:
-        try:
-            old_full = static_dir / Path(cfg.logo_path.replace("/static/", "").lstrip("/"))
-            if old_full.exists():
-                old_full.unlink(missing_ok=True)
-        except Exception:
-            pass
+    cfg.logo_data = None
+    cfg.logo_content_type = None
     cfg.logo_path = None
     await session.commit()
     await session.refresh(cfg)
