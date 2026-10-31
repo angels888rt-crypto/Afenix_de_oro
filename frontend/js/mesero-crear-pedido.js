@@ -88,38 +88,38 @@ document.addEventListener('DOMContentLoaded', async () => {
         <h3 style="font-family:Cinzel,serif; color:#c79a45; font-size:1rem; border-bottom:1px solid rgba(199,154,69,0.25); padding-bottom:6px; margin-bottom:12px; text-transform:uppercase; letter-spacing:0.1em;">${esc(cat)}</h3>
         <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:16px;">
           ${grouped[cat].map(d => {
-            const disponible = !!d.is_available;
-            const img = d.image_url || d.image_path || '';
-            const imgHtml = img
-              ? `<img src="${esc(img)}" alt="${esc(d.name)}" style="width:100%; height:120px; object-fit:cover; border-radius:10px; border:1px solid var(--line); margin-bottom:10px; ${disponible ? '' : 'filter:grayscale(0.6); opacity:0.6;'}">`
-              : `<div style="width:100%; height:120px; display:flex; align-items:center; justify-content:center; background:#f6f1e7; border:1px solid var(--line); border-radius:10px; color:var(--muted); font-size:.85rem;">Sin imagen</div>`;
-            const badge = disponible
-              ? '<span style="display:inline-block; background:#e6f4e8; color:#246126; font-size:.7rem; font-weight:700; padding:4px 8px; border-radius:999px;">🟢 DISPONIBLE</span>'
-              : '<span style="display:inline-block; background:#f6e5e4; color:#8a2925; font-size:.7rem; font-weight:700; padding:4px 8px; border-radius:999px;">🔴 AGOTADO</span>';
-            const subcats = subcategoriesByDish[d.id] || [];
-            const mandatorySubcats = subcats.filter(s => s.is_active !== false);
-            const subcatHtml = mandatorySubcats.map(s => {
-              const optionsHtml = s.options.map(o => `
+        const disponible = !!d.is_available;
+        const img = d.image_url || d.image_path || '';
+        const imgHtml = img
+          ? `<img src="${esc(img)}" alt="${esc(d.name)}" style="width:100%; height:120px; object-fit:cover; border-radius:10px; border:1px solid var(--line); margin-bottom:10px; ${disponible ? '' : 'filter:grayscale(0.6); opacity:0.6;'}">`
+          : `<div style="width:100%; height:120px; display:flex; align-items:center; justify-content:center; background:#f6f1e7; border:1px solid var(--line); border-radius:10px; color:var(--muted); font-size:.85rem;">Sin imagen</div>`;
+        const badge = disponible
+          ? '<span style="display:inline-block; background:#e6f4e8; color:#246126; font-size:.7rem; font-weight:700; padding:4px 8px; border-radius:999px;">🟢 DISPONIBLE</span>'
+          : '<span style="display:inline-block; background:#f6e5e4; color:#8a2925; font-size:.7rem; font-weight:700; padding:4px 8px; border-radius:999px;">🔴 AGOTADO</span>';
+        const subcats = subcategoriesByDish[d.id] || [];
+        const mandatorySubcats = subcats.filter(s => s.is_active !== false);
+        const subcatHtml = mandatorySubcats.map(s => {
+          const optionsHtml = s.options.map(o => `
                 <option value="${o.id}">${esc(o.name)}</option>
               `).join('');
-              return `<div class="subcat-selector" style="margin-top:8px; padding:8px; background:#fdf6f0; border:1px solid #eadfcf; border-radius:8px;">
+          return `<div class="subcat-selector" style="margin-top:8px; padding:8px; background:#fdf6f0; border:1px solid #eadfcf; border-radius:8px;">
                 <label style="display:block; font-size:.8rem; font-weight:600; color:#7a0c12; margin-bottom:4px;">${esc(s.name)} <span style="font-size:.7rem; color:#999;">(obligatorio)</span></label>
                 <select id="sc_${d.id}_${s.id}" data-dish="${d.id}" data-subcat="${s.id}" style="width:100%; padding:6px; font-size:.85rem; border:1px solid #ccc; border-radius:4px;">
                   <option value="">Seleccionar ${esc(s.name)}...</option>
                   ${optionsHtml}
                 </select>
               </div>`;
-            }).join('');
-            const selectionStatus = pendingSelections[d.id] ? 
-              `<div class="selection-status" style="margin-top:6px; color:#246126; font-size:.75rem; font-weight:600;">✓ Seleccionado</div>` : '';
-            if (!disponible) {
-              return `<article class="inventory-card" style="opacity:0.88;"><div style="margin-bottom:10px;">${imgHtml}</div><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;"><h3 style="margin:0; font-size:.9rem;">${esc(d.name)}</h3>${badge}</div><p class="muted">${money(d.price)} · <span style="color:#8a2925; font-weight:600;">AGOTADO</span></p></article>`;
-            }
-            return `<article class="inventory-card"><div style="margin-bottom:10px;">${imgHtml}</div><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;"><h3 style="margin:0; font-size:.9rem;">${esc(d.name)}</h3>${badge}</div><p class="muted">${money(d.price)} · Disponible</p>
+        }).join('');
+        const selectionStatus = pendingSelections[d.id] ?
+          `<div class="selection-status" style="margin-top:6px; color:#246126; font-size:.75rem; font-weight:600;">✓ Seleccionado</div>` : '';
+        if (!disponible) {
+          return `<article class="inventory-card" style="opacity:0.88;"><div style="margin-bottom:10px;">${imgHtml}</div><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;"><h3 style="margin:0; font-size:.9rem;">${esc(d.name)}</h3>${badge}</div><p class="muted">${money(d.price)} · <span style="color:#8a2925; font-weight:600;">AGOTADO</span></p></article>`;
+        }
+        return `<article class="inventory-card"><div style="margin-bottom:10px;">${imgHtml}</div><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;"><h3 style="margin:0; font-size:.9rem;">${esc(d.name)}</h3>${badge}</div><p class="muted">${money(d.price)} · Disponible</p>
               ${subcatHtml}
               ${selectionStatus}
-              <div class="field" style="margin-top:8px;"><label for="q${d.id}">Cantidad</label><input id="q${d.id}" data-dish="${d.id}" type="number" min="0" value="" placeholder="Cant" inputmode="numeric" style="width:80px;"></div><div class="line-total" id="line${d.id}" style="display:none;">Subtotal: ${money(0)}</div></article>`;
-          }).join('')}
+              <div class="field" style="margin-top:8px;"><label for="q${d.id}">Cantidad</label><input id="q${d.id}" data-dish="${d.id}" type="number" min="0" value="" placeholder="Cant" inputmode="numeric" style="width:80px;"></div><div class="line-total" id="line${d.id}" style="display:none;"></div></article>`;
+      }).join('')}
         </div>
       </div>`;
     });
@@ -165,9 +165,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       const q = Number(changed.value) || 0;
       const line = $(`#line${d.id}`);
       if (line) {
-        line.textContent = `Subtotal: ${money(q * (Number(d?.price) || 0))}`;
-        // Solo mostrar el subtotal de línea cuando hay cantidadIngresada.
-        line.style.display = q > 0 ? '' : 'none';
+        // El subtotal de línea solo existe visualmente cuando hay cantidad > 0.
+        // Las subcategorías nunca generan subtotal propio.
+        if (q > 0) {
+          line.textContent = `Subtotal: ${money(q * (Number(d?.price) || 0))}`;
+          line.style.display = '';
+        } else {
+          line.style.display = 'none';
+        }
       }
     }
     let totalCents = 0;
