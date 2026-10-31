@@ -3,7 +3,7 @@
 
 
 
-<html lang="es">
+  <html lang="es">
 
 
 
@@ -39,26 +39,14 @@
 
 
     <link
-
-
-
-
       href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Poppins:wght@300;400;500;600&display=swap"
+      rel="stylesheet" />
 
 
 
 
-      rel="stylesheet"
-
-
-
-
-    />
-
-
-
-
-    <link rel="stylesheet" href="css/app-shell.css"><link rel="stylesheet" href="css/sidebar.css" />
+    <link rel="stylesheet" href="css/app-shell.css">
+    <link rel="stylesheet" href="css/sidebar.css" />
 
 
 
@@ -69,10 +57,6 @@
 
 
     <style>
-
-
-
-
       /* ===== AFENIX — mesero-crear-pedido elegante ===== */
 
 
@@ -323,32 +307,22 @@
 
 
 
-        background: linear-gradient(
+        background: linear-gradient(90deg,
 
 
 
 
-          90deg,
+            transparent,
 
 
 
 
-          transparent,
+            var(--afenix-gold),
 
 
 
 
-          var(--afenix-gold),
-
-
-
-
-          transparent
-
-
-
-
-        );
+            transparent);
 
 
 
@@ -763,7 +737,8 @@
 
 
 
-        font-size: 7.5pt; /* Letra un poco más pequeña para que quepa todo */
+        font-size: 7.5pt;
+        /* Letra un poco más pequeña para que quepa todo */
 
 
 
@@ -1529,10 +1504,6 @@
 
 
       }
-
-
-
-
     </style>
 
 
@@ -1553,10 +1524,12 @@
 
 
 
-        <header class="app-header">
+    <header class="app-header">
       <div class="container app-header__inner">
-        <a class="logo" href="/mesero.html"><span class="logo__symbol">凤</span><span class="logo__text"><strong>Afénix de Oro</strong><small>Mesero · Crear pedido</small></span></a>
-        <div class="app-header__actions"><span class="user-chip" id="userChip"></span><button class="btn btn--ghost btn--small" id="logoutBtn">Cerrar sesión</button></div>
+        <a class="logo" href="/mesero.html"><span class="logo__symbol">凤</span><span class="logo__text"><strong>Afénix de
+              Oro</strong><small>Mesero · Crear pedido</small></span></a>
+        <div class="app-header__actions"><span class="user-chip" id="userChip"></span><button
+            class="btn btn--ghost btn--small" id="logoutBtn">Cerrar sesión</button></div>
       </div>
     </header>
 
@@ -1593,7 +1566,7 @@
 
 
 
-          
+
 
 
 
@@ -1688,27 +1661,7 @@
 
 
 
-                <button
-
-
-
-
-                  class="btn btn--ghost btn--small"
-
-
-
-
-                  id="refreshData"
-
-
-
-
-                  type="button"
-
-
-
-
-                >
+                <button class="btn btn--ghost btn--small" id="refreshData" type="button">
 
 
 
@@ -1743,62 +1696,9 @@
 
 
 
-                    <label for="table">Número de mesa</label
-
-
-
-
-                    ><input
-
-
-
-
-                      id="table"
-
-
-
-
-                      required
-
-
-
-
-                      type="number"
-
-
-
-
-                      min="1"
-
-
-
-
-                      step="1"
-
-
-
-
-                      inputmode="numeric"
-
-
-
-
-                      placeholder="Ej. 12"
-
-
-
-
-                    /><small class="muted"
-
-
-
-
-                      >Ej. 12 — mesa física del salón</small
-
-
-
-
-                    >
+                    <label for="table">Número de mesa</label><input id="table" required type="number" min="1" step="1"
+                      inputmode="numeric" placeholder="Ej. 12" /><small class="muted">Ej. 12 — mesa física del
+                      salón</small>
 
 
 
@@ -1813,32 +1713,8 @@
 
 
 
-                    <label for="notes">Notas para cocina</label
-
-
-
-
-                    ><textarea
-
-
-
-
-                      id="notes"
-
-
-
-
-                      rows="2"
-
-
-
-
-                      placeholder="Sin picante, extra salsa…"
-
-
-
-
-                    ></textarea>
+                    <label for="notes">Notas para cocina</label><textarea id="notes" rows="2"
+                      placeholder="Sin picante, extra salsa…"></textarea>
 
 
 
@@ -1878,22 +1754,7 @@
 
 
 
-                  <h4
-
-
-
-
-                    class="afenix-card__title"
-
-
-
-
-                    style="font-size: 0.95rem; margin-bottom: 10px"
-
-
-
-
-                  >
+                  <h4 class="afenix-card__title" style="font-size: 0.95rem; margin-bottom: 10px">
 
 
 
@@ -1908,12 +1769,16 @@
 
 
 
-                  <div
-
-
-
-
-                                      <!-- Buscador y filtro de categor�as -->\n                  <div class="dishes-controls" style="margin-bottom:16px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">\n                    <div class="field" style="flex:1; min-width:200px;">\n                      <label for="dishSearch">Buscar plato</label>\n                      <input id="dishSearch" type="search" placeholder="Buscar por nombre�" inputmode="search" />\n                    </div>\n                    <div class="field" style="min-width:200px;">\n                      <label for="categoryFilter">Filtrar por categor�a</label>\n                      <select id="categoryFilter"><option value="">Todas las categor�as</option></select>\n                    </div>\n                  </div>\n                  <div\n\n                    id="dishes"\n\n                    class="inventory-grid inventory-grid--order"\n\n                    style="gap: 16px"\n\n                  ></div>
+                  <div <!-- Buscador y filtro de categor�as -->\n <div class="dishes-controls"
+                      style="margin-bottom:16px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">\n <div
+                        class="field" style="flex:1; min-width:200px;">\n <label for="dishSearch">Buscar plato</label>\n
+                        <input id="dishSearch" type="search" placeholder="Buscar por nombre�" inputmode="search" />\n
+                      </div>\n <div class="field" style="min-width:200px;">\n <label for="categoryFilter">Filtrar por
+                          categor�a</label>\n <select id="categoryFilter">
+                          <option value="">Todas las categor�as</option>
+                        </select>\n </div>\n </div>\n <div\n\n id="dishes" \n\n
+                      class="inventory-grid inventory-grid--order" \n\n style="gap: 16px" \n\n>
+                  </div>
 
 
 
@@ -1938,42 +1803,27 @@
 
 
 
-                    <div
+                    <div class="muted" style="
 
 
 
 
-                      class="muted"
+                          font-size: 0.78rem;
 
 
 
 
-                      style="
+                          letter-spacing: 0.06em;
 
 
 
 
-                        font-size: 0.78rem;
+                          text-transform: uppercase;
 
 
 
 
-                        letter-spacing: 0.06em;
-
-
-
-
-                        text-transform: uppercase;
-
-
-
-
-                      "
-
-
-
-
-                    >
+                        ">
 
 
 
@@ -1988,17 +1838,7 @@
 
 
 
-                    <strong id="total" style="font-size: 1.25rem"
-
-
-
-
-                      >Total: $0</strong
-
-
-
-
-                    >
+                    <strong id="total" style="font-size: 1.25rem">Total: $0</strong>
 
 
 
@@ -2043,7 +1883,7 @@
 
 
 
-            
+
 
 
 
@@ -2088,14 +1928,31 @@
 
 
 
-    <script src="js/app-common.js?v=20261027-3"></script><script src="js/sidebar.js"></script>
-
+    <script src="js/app-common.js?v=20261027-3"></script>
+    <script src="js/sidebar.js"></script>
 
 
 
     <script src="js/mesero-crear-pedido.js?v=20261030-3"></script>
-
-
+    <script>
+      // Parche temporal: oculta el subtotal de línea hasta que ingreses cantidad.
+      // Las subcategorías son solo características (color, tamaño, picante), no afectan el precio.
+      (function () {
+        function hideLineTotals() {
+          document.querySelectorAll('.line-total').forEach(function (el) {
+            var txt = (el.textContent || '').trim();
+            if (txt === '' || txt === 'Subtotal: $0' || txt.indexOf('$0') === 0) {
+              el.style.display = 'none';
+              el.textContent = '';
+            }
+          });
+        }
+        hideLineTotals();
+        var obs = new MutationObserver(hideLineTotals);
+        var target = document.getElementById('dishes') || document.body;
+        obs.observe(target, { childList: true, subtree: true });
+      })();
+    </script>
 
 
   </body>
@@ -2103,8 +1960,4 @@
 
 
 
-</html>
-
-
-
-
+  </html>
