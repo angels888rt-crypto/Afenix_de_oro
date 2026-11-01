@@ -1938,30 +1938,11 @@
 
 
   <script src="js/mesero-crear-pedido.js?v=20261030-3"></script>
-  <script>
-    // Parche: al elegir subcategoría no se recalcula ni se muestra ningún precio.
-    // Las subcategorías son solo características (color, tamaño, picante), no afectan el precio.
-    document.addEventListener('change', function (e) {
-      if (e.target && e.target.matches && e.target.matches('select[data-subcat]')) {
-        e.stopImmediatePropagation(); // bloquea que el JS viejo de Vercel dispare updateTotal()
-      }
-    }, true);
-
-    // El total general solo se muestra si hay al menos un plato con cantidad > 0.
-    function syncTotalVisibility() {
-      var hasQty = false;
-      document.querySelectorAll('[data-dish]').forEach(function (i) {
-        if ((Number(i.value) || 0) > 0) hasQty = true;
-      });
-      var totalEl = document.getElementById('total');
-      if (totalEl) {
-        totalEl.style.display = hasQty ? '' : 'none';
-        if (!hasQty) totalEl.textContent = 'Total: $0';
-      }
+  <style>
+    .line-total {
+      display: none !important;
     }
-    syncTotalVisibility();
-    document.addEventListener('input', syncTotalVisibility);
-  </script>
+  </style>
 
 
 </body>
