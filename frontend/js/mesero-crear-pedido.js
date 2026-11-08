@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const items = [];
       let validationError = '';
-      document.querySelectorAll('[data-dish]').forEach(input => {
+      document.querySelectorAll('input[data-dish]').forEach(input => {
         const dishId = parseInt(input.dataset.dish);
         const quantity = Number(input.value) || 0;
         if (quantity <= 0) return;
