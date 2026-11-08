@@ -59,6 +59,31 @@ def _add_column_if_missing(sync_connection, table_name: str, column_name: str, d
         pass
 
 
+def _ensure_column_has_default(sync_connection, table_name: str, column_name: str, default_value: str) -> None:
+    """Set a default value on an existing column so inserts that omit it succeed.
+
+    Legacy MySQL deployments may already have descriptive columns (e.g.
+    ``subcategory_name``) defined as NOT NULL without a default. The ORM model
+    does not map them, so inserts fail with
+    ``Field 'subcategory_name' doesn't have a default value``. This only sets
+    the default; it never changes nullability nor touches existing data, and it
+    is safe to no-op on dialects that do not support ALTER COLUMN.
+    """
+    try:
+        columns = _column_names(sync_connection, table_name)
+    except Exception:
+        return
+    if column_name not in columns:
+        return
+    try:
+        sync_connection.execute(
+            text(f"ALTER TABLE {table_name} ALTER COLUMN {column_name} SET DEFAULT {default_value}")
+        )
+    except Exception:
+        # Ignore: unsupported syntax on other dialects, or default already set.
+        pass
+
+
 def _ensure_subcategory_schema(sync_connection) -> None:
     """Create subcategory tables and add fields missing from the original migration."""
     from app.infrastructure.database.models import (
@@ -108,6 +133,22 @@ def _ensure_subcategory_schema(sync_connection) -> None:
             column_name,
             ddl,
         )
+
+    # Ensure descriptive columns that already exist in legacy deployments carry a
+    # default value, so inserts that omit them (the ORM model does not map them)
+    # no longer fail with "Field 'subcategory_name' doesn't have a default value".
+    _ensure_column_has_default(
+        sync_connection,
+        "order_item_subcategory_selections",
+        "subcategory_name",
+        "''",
+    )
+    _ensure_column_has_default(
+        sync_connection,
+        "order_item_subcategory_selections",
+        "option_name",
+        "''",
+    )
 
 
 async def ensure_subcategory_schema() -> None:

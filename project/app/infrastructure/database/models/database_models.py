@@ -320,6 +320,8 @@ class OrderItemSubcategorySelectionModel(BaseModel):
     order_item_id = Column(Integer, ForeignKey("order_items.id", ondelete="CASCADE"), nullable=False, index=True)
     subcategory_id = Column(Integer, ForeignKey("subcategories.id", ondelete="CASCADE"), nullable=False, index=True)
     option_id = Column(Integer, ForeignKey("subcategory_options.id", ondelete="CASCADE"), nullable=False, index=True)
+    subcategory_name = Column(String(80), nullable=False, default="")
+    option_name = Column(String(80), nullable=False, default="")
 
     __table_args__ = (
         Index("idx_selection_order_item", "order_item_id"),
