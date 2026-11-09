@@ -78,8 +78,16 @@ def get_history_repository(session: AsyncSession = Depends(get_session)):
     return HistoryRepository(session)
 
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security_scheme)):
-    """Get current authenticated user from token."""
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+    user_repository: UserRepository = Depends(get_user_repository),
+):
+    """Get current authenticated user from token.
+
+    El rol se toma de la base de datos (fuente de verdad) en lugar de confiar
+    solo en el payload del JWT, ya que el token puede venir de un proveedor
+    externo y desincronizarse del rol real del usuario.
+    """
     token = credentials.credentials
     if not token:
         raise HTTPException(
@@ -92,7 +100,6 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         payload = decode_token(token)
         user_id: str = payload.get("sub")
         username: str = payload.get("username")
-        role: str = payload.get("role")
         
         if user_id is None:
             raise HTTPException(
@@ -101,8 +108,19 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
                 headers={"WWW-Authenticate": "Bearer"},
             )
         
+        # Rol real de la BD (si el usuario existe localmente); fallback al token.
+        role = payload.get("role")
+        try:
+            user = await user_repository.get_by_id(int(user_id))
+            if user and getattr(user, 'role', None):
+                role = user.role
+        except Exception:
+            pass  # Si no se puede consultar la BD, se mantiene el rol del token.
+        
         return {"user_id": int(user_id), "username": username, "role": role}
     
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
