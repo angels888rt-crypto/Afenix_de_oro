@@ -109,7 +109,9 @@ async def get_current_user(
             )
         
         # Rol real de la BD (si el usuario existe localmente); fallback al token.
-        role = payload.get("role")
+        # Nota: algunos proveedores de token externo envían el rol como "rol" (español)
+        # en lugar de "role", así que se lee ambos campos.
+        role = payload.get("role") or payload.get("rol")
         try:
             user = await user_repository.get_by_id(int(user_id))
             if user and getattr(user, 'role', None):
