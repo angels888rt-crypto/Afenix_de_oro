@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   function orderCard(order) {
     const displayNumber = order.daily_number || order.id;
     const tableNumber = String(getTableNumber(order) ?? '').padStart(2, '0');
-    const waiter = esc(`Mesero #${order.camarero_id || '?'}`);
+    const waiter = esc(order.camarero_name || `Mesero #${order.camarero_id || '?'}`);
     const createdAt = date(order.created_at);
     const status = esc(order.status);
     const items = (order.items || []).map(item => {
@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   function printKitchenTicket(order) {
     const displayNumber = order.daily_number || order.id;
     const tableNumber = String(getTableNumber(order) ?? '').padStart(2, '0');
-    const waiter = `Mesero #${order.camarero_id || '?'}`;
+    const waiter = order.camarero_name || `Mesero #${order.camarero_id || '?'}`;
     const createdAt = new Date(order.created_at).toLocaleString('es-CO');
     const logo = receiptConfig.logo_url
       ? `<div style="text-align:center;margin:6px 0 8px;"><img src="${esc(receiptConfig.logo_url)}" alt="Logo" style="max-width:38mm;max-height:16mm;object-fit:contain;display:inline-block;"></div>`

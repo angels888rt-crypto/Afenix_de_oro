@@ -29,7 +29,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   function isEntregado(o){ return o.status === 'ENTREGADO'; }
 
   function card(o) {
-    const items = (o.items || []).map(i => `<li><strong>${i.quantity} × ${esc(i.dish_name || `Plato #${i.dish_id}`)}</strong> ${money ? `· ${money(i.unit_price)}` : ''}${i.special_notes ? ` - ${esc(i.special_notes)}` : ''}</li>`).join('');
+    const items = (o.items || []).map(i => {
+      const selections = (i.subcategory_selections || [])
+        .map(s => `${esc(s.subcategory_name)}: ${esc(s.option_name)}`)
+        .join(' · ');
+      const selectionMarkup = selections
+        ? `<div style="font-size:.82rem;color:#6b5e56;margin-top:4px;">${selections}</div>`
+        : '';
+      return `<li><strong>${i.quantity} × ${esc(i.dish_name || `Plato #${i.dish_id}`)}</strong> ${money ? `· ${money(i.unit_price)}` : ''}${selectionMarkup}${i.special_notes ? ` - ${esc(i.special_notes)}` : ''}</li>`;
+    }).join('');
     let actions = '';
     if (isPending(o)){
       actions = `<button class="btn btn--ghost btn--small" data-edit="${o.id}">Editar</button><button class="btn btn--danger btn--small" data-cancel="${o.id}">Cancelar</button>`;

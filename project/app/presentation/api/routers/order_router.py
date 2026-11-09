@@ -1,4 +1,5 @@
 """Order API routers and role-aware order workflow."""
+import asyncio
 from typing import Optional
 from fastapi import APIRouter, Depends, status, Query, HTTPException
 
@@ -35,7 +36,7 @@ async def _log_history_safe(repo: HistoryRepository, **kwargs):
     except Exception:
         pass
 
-def _to_response(order, user_repository: Optional[UserRepository] = None) -> OrderResponse:
+async def _to_response(order, user_repository: Optional[UserRepository] = None, selection_repo: Optional[OrderItemSubcategorySelectionRepository] = None) -> OrderResponse:
     camarero_name = None
     if order.camarero_id and user_repository:
         try:
@@ -44,16 +45,20 @@ def _to_response(order, user_repository: Optional[UserRepository] = None) -> Ord
                 camarero_name = getattr(user, 'username', None) or getattr(user, 'full_name', None) or f"Usuario #{order.camarero_id}"
         except Exception:
             camarero_name = f"Usuario #{order.camarero_id}"
-    return OrderResponse(
-        id=order.id,
-        table_id=order.table_id,
-        table_number=getattr(order, 'table_number', None),
-        camarero_id=order.camarero_id,
-        camarero_name=camarero_name,
-        status=order.status,
-        total_amount=order.total_amount,
-        notes=order.notes,
-        items=[
+
+    items_responses = []
+    for item in order.items:
+        subcategory_selections = None
+        if selection_repo is not None:
+            try:
+                sel_models = await selection_repo.get_selections_for_order_item(item.id)
+                subcategory_selections = [
+                    {"subcategory_name": s.subcategory_name, "option_name": s.option_name}
+                    for s in sel_models
+                ] or None
+            except Exception:
+                subcategory_selections = None
+        items_responses.append(
             OrderItemResponse(
                 id=item.id,
                 order_id=item.order_id,
@@ -67,9 +72,20 @@ def _to_response(order, user_repository: Optional[UserRepository] = None) -> Ord
                 completed_at=item.completed_at,
                 created_at=item.created_at,
                 updated_at=item.updated_at,
+                subcategory_selections=subcategory_selections,
             )
-            for item in order.items
-        ],
+        )
+
+    return OrderResponse(
+        id=order.id,
+        table_id=order.table_id,
+        table_number=getattr(order, 'table_number', None),
+        camarero_id=order.camarero_id,
+        camarero_name=camarero_name,
+        status=order.status,
+        total_amount=order.total_amount,
+        notes=order.notes,
+        items=items_responses,
         daily_number=getattr(order, 'daily_number', None),
         cycle_key=getattr(order, 'cycle_key', None),
         started_at=order.started_at,
@@ -119,7 +135,7 @@ async def create_order(
         performed_by=current_user["user_id"],
         performed_by_username=current_user.get("username"),
     )
-    return ResponseSchema(success=True, message="Pedido creado exitosamente", data=_to_response(order, user_repository))
+    return ResponseSchema(success=True, message="Pedido creado exitosamente", data=await _to_response(order, user_repository, selection_repo))
 
 
 # Specific collection routes come before /{order_id} to avoid route conflicts.
@@ -130,6 +146,7 @@ async def get_my_orders(
     current_user: dict = Depends(get_current_user),
     order_repository: OrderRepository = Depends(get_order_repository),
     user_repository: UserRepository = Depends(get_user_repository),
+    selection_repo: OrderItemSubcategorySelectionRepository = Depends(get_order_item_subcategory_selection_repository),
 ):
     """Get only the orders created by the authenticated waiter."""
     await require_role("CAMARERO")(current_user)
@@ -138,7 +155,7 @@ async def get_my_orders(
     return ResponseSchema(
         success=True,
         message="Pedidos del mesero obtenidos exitosamente",
-        data=[_to_response(order, user_repository) for order in orders],
+        data=await asyncio.gather(*[_to_response(order, user_repository, selection_repo) for order in orders]),
     )
 
 
@@ -149,6 +166,7 @@ async def get_kitchen_orders(
     current_user: dict = Depends(get_current_user),
     order_repository: OrderRepository = Depends(get_order_repository),
     user_repository: UserRepository = Depends(get_user_repository),
+    selection_repo: OrderItemSubcategorySelectionRepository = Depends(get_order_item_subcategory_selection_repository),
 ):
     """Get orders visible to kitchen (ADMIN and MONITOR)."""
     await require_role("ADMIN", "MONITOR")(current_user)
@@ -157,7 +175,7 @@ async def get_kitchen_orders(
     return ResponseSchema(
         success=True,
         message="Pedidos de cocina obtenidos exitosamente",
-        data=[_to_response(order, user_repository) for order in orders],
+        data=await asyncio.gather(*[_to_response(order, user_repository, selection_repo) for order in orders]),
     )
 
 
@@ -168,6 +186,7 @@ async def get_monitor_pending(
     current_user: dict = Depends(get_current_user),
     order_repository: OrderRepository = Depends(get_order_repository),
     user_repository: UserRepository = Depends(get_user_repository),
+    selection_repo: OrderItemSubcategorySelectionRepository = Depends(get_order_item_subcategory_selection_repository),
 ):
     """Get pending orders for kitchen monitor (MONITOR and ADMIN)."""
     await require_role("MONITOR", "ADMIN")(current_user)
@@ -176,7 +195,7 @@ async def get_monitor_pending(
     return ResponseSchema(
         success=True,
         message="Órdenes pendientes para monitor obtenidas exitosamente",
-        data=[_to_response(order, user_repository) for order in orders],
+        data=await asyncio.gather(*[_to_response(order, user_repository, selection_repo) for order in orders]),
     )
 
 
@@ -187,12 +206,13 @@ async def get_cajero_pending_orders(
     current_user: dict = Depends(get_current_user),
     order_repository: OrderRepository = Depends(get_order_repository),
     user_repository: UserRepository = Depends(get_user_repository),
+    selection_repo: OrderItemSubcategorySelectionRepository = Depends(get_order_item_subcategory_selection_repository),
 ):
     """Get pending orders for CAJERO - only current cycle (America/Bogota 22:00)."""
     await require_role("CAJERO", "ADMIN")(current_user)
     use_case = GetPendingOrdersForCajeroUseCase(order_repository)
     orders = await use_case.execute(skip, limit)
-    return ResponseSchema(success=True, message="Pedidos pendientes obtenidos exitosamente", data=[_to_response(o, user_repository) for o in orders])
+    return ResponseSchema(success=True, message="Pedidos pendientes obtenidos exitosamente", data=await asyncio.gather(*[_to_response(o, user_repository, selection_repo) for o in orders]))
 
 
 @router.get("/cajero/entregados", response_model=ResponseSchema[list[OrderResponse]])
@@ -202,12 +222,13 @@ async def get_cajero_entregados(
     current_user: dict = Depends(get_current_user),
     order_repository: OrderRepository = Depends(get_order_repository),
     user_repository: UserRepository = Depends(get_user_repository),
+    selection_repo: OrderItemSubcategorySelectionRepository = Depends(get_order_item_subcategory_selection_repository),
 ):
     """Get ENTREGADO orders for CAJERO - pestaña Entregados (solo ciclo actual)."""
     await require_role("CAJERO", "ADMIN")(current_user)
     use_case = GetEntregadosForCajeroUseCase(order_repository)
     orders = await use_case.execute(skip, limit)
-    return ResponseSchema(success=True, message="Pedidos entregados obtenidos exitosamente", data=[_to_response(o, user_repository) for o in orders])
+    return ResponseSchema(success=True, message="Pedidos entregados obtenidos exitosamente", data=await asyncio.gather(*[_to_response(o, user_repository, selection_repo) for o in orders]))
 
 
 @router.get("/reports/sales", response_model=ResponseSchema[dict])
@@ -265,7 +286,7 @@ async def get_sales_report(
                     raise HTTPException(status_code=400, detail="end_date inválido")
     use_case = GetSalesReportUseCase(order_repository)
     data = await use_case.execute(start_date=s_dt, end_date=e_dt, dish_id=dish_id, camarero_id=camarero_id, skip=skip, limit=limit)
-    orders_resp = [_to_response(o).model_dump() for o in data.get("orders", [])]
+    orders_resp = [o.model_dump() for o in await asyncio.gather(*[_to_response(order) for order in data.get("orders", [])])]
     platos = data.get("platos", [])
     for p in platos:
         p["total_formatted"] = f"${(p.get('total_cents',0)/100):.2f}"
@@ -289,6 +310,7 @@ async def get_order_history(
     current_user: dict = Depends(get_current_user),
     order_repository: OrderRepository = Depends(get_order_repository),
     user_repository: UserRepository = Depends(get_user_repository),
+    selection_repo: OrderItemSubcategorySelectionRepository = Depends(get_order_item_subcategory_selection_repository),
 ):
     """Get the complete order history. Admin only."""
     await require_role("ADMIN")(current_user)
@@ -296,7 +318,7 @@ async def get_order_history(
     return ResponseSchema(
         success=True,
         message="Historial de órdenes obtenido exitosamente",
-        data=[_to_response(order, user_repository) for order in orders],
+        data=await asyncio.gather(*[_to_response(order, user_repository, selection_repo) for order in orders]),
     )
 
 
@@ -308,12 +330,13 @@ async def get_orders_by_status(
     current_user: dict = Depends(get_current_user),
     order_repository: OrderRepository = Depends(get_order_repository),
     user_repository: UserRepository = Depends(get_user_repository),
+    selection_repo: OrderItemSubcategorySelectionRepository = Depends(get_order_item_subcategory_selection_repository),
 ):
     """Get orders by status. Restricted to admin."""
     current_user = await require_role("ADMIN")(current_user)
     use_case = GetOrdersByStatusUseCase(order_repository)
     orders = await use_case.execute(status, skip, limit)
-    return ResponseSchema(success=True, message="Pedidos obtenidos exitosamente", data=[_to_response(o, user_repository) for o in orders])
+    return ResponseSchema(success=True, message="Pedidos obtenidos exitosamente", data=await asyncio.gather(*[_to_response(o, user_repository, selection_repo) for o in orders]))
 
 
 @router.get("/table/{table_id}/active", response_model=ResponseSchema[OrderResponse])
@@ -322,6 +345,7 @@ async def get_order_by_table(
     current_user: dict = Depends(get_current_user),
     order_repository: OrderRepository = Depends(get_order_repository),
     user_repository: UserRepository = Depends(get_user_repository),
+    selection_repo: OrderItemSubcategorySelectionRepository = Depends(get_order_item_subcategory_selection_repository),
 ):
     """Get active order for table."""
     await require_role("CAMARERO", "ADMIN")(current_user)
@@ -330,7 +354,7 @@ async def get_order_by_table(
     if not order:
         from app.shared.exceptions import ResourceNotFoundException
         raise ResourceNotFoundException("No hay pedido activo para esta mesa")
-    return ResponseSchema(success=True, message="Pedido obtenido exitosamente", data=_to_response(order, user_repository))
+    return ResponseSchema(success=True, message="Pedido obtenido exitosamente", data=await _to_response(order, user_repository, selection_repo))
 
 
 
@@ -342,12 +366,13 @@ async def list_orders(
     current_user: dict = Depends(get_current_user),
     order_repository: OrderRepository = Depends(get_order_repository),
     user_repository: UserRepository = Depends(get_user_repository),
+    selection_repo: OrderItemSubcategorySelectionRepository = Depends(get_order_item_subcategory_selection_repository),
 ):
     """List all orders for admin only; use /mine or /kitchen for operational views."""
     await require_role("ADMIN")(current_user)
     use_case = ListOrdersUseCase(order_repository)
     orders = await use_case.execute(skip, limit)
-    return ResponseSchema(success=True, message="Pedidos obtenidos exitosamente", data=[_to_response(o, user_repository) for o in orders])
+    return ResponseSchema(success=True, message="Pedidos obtenidos exitosamente", data=await asyncio.gather(*[_to_response(o, user_repository, selection_repo) for o in orders]))
 
 
 @router.put("/{order_id}/edit", response_model=ResponseSchema[OrderResponse])
@@ -358,6 +383,7 @@ async def edit_order(
     order_repository: OrderRepository = Depends(get_order_repository),
     dish_repository: DishRepository = Depends(get_dish_repository),
     user_repository: UserRepository = Depends(get_user_repository),
+    selection_repo: OrderItemSubcategorySelectionRepository = Depends(get_order_item_subcategory_selection_repository),
     history_repo: HistoryRepository = Depends(get_history_repository),
 ):
     """Edit pending order - mesero can modify his own PENDIENTE orders."""
@@ -390,7 +416,7 @@ async def edit_order(
         performed_by=current_user["user_id"],
         performed_by_username=current_user.get("username"),
     )
-    return ResponseSchema(success=True, message="Pedido actualizado exitosamente", data=_to_response(order, user_repository))
+    return ResponseSchema(success=True, message="Pedido actualizado exitosamente", data=await _to_response(order, user_repository, selection_repo))
 
 
 @router.put("/items/{item_id}", response_model=ResponseSchema[OrderItemResponse])
@@ -474,7 +500,7 @@ async def update_order_status(
         performed_by=current_user["user_id"],
         performed_by_username=current_user.get("username"),
     )
-    return ResponseSchema(success=True, message="Pedido actualizado exitosamente", data=_to_response(updated, user_repository))
+    return ResponseSchema(success=True, message="Pedido actualizado exitosamente", data=await _to_response(updated, user_repository))
 
 
 @router.post("/cleanup/daily", response_model=ResponseSchema[dict])
